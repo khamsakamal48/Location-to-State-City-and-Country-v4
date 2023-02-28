@@ -3,9 +3,16 @@ import streamlit as st
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """            
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-api_key = os.environ.get('API_KEY')
+load_dotenv()
+api_key = os.getenv('API_KEY')
 
 st.title('Find City, State and Country')
 
