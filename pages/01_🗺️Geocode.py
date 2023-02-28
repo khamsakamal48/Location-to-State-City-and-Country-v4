@@ -3,6 +3,11 @@ import streamlit as st
 from dotenv import load_dotenv
 import os
 
+st.set_page_config(
+    page_title='Address Geocoder',
+    page_icon=':round_pushpin:',
+    layout="wide")
+
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -30,8 +35,15 @@ if st.button('Geocode'):
                 state = component['long_name']
             elif 'country' in component['types']:
                 country = component['long_name']
-        st.write(f'City: {city}')
-        st.write(f'State: {state}')
-        st.write(f'Country: {country}')
+                
+        st.write('City:')
+        st.code(city)
+        
+        st.write('State:')
+        st.code(state)
+        
+        st.write('Country:')
+        st.code(country)
+    
     else:
         st.error('Unable to geocode address')
