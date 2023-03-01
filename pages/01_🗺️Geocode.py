@@ -23,7 +23,7 @@ st.title('Find City, State and Country')
 
 address = st.text_input('Enter address or location')
 if st.button('Geocode'):
-    url = f'https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}'
+    url = f'https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}&language=en'
     response = requests.get(url).json()
     if response['status'] == 'OK':
         results = response['results'][0]
