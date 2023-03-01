@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import pyperclip
 
 st.set_page_config(
     page_title='Search Raisers Edge ID against contact information',
@@ -22,10 +21,6 @@ def get_data():
     return data
 
 data = get_data()
-
-def copy_to_clipboard(text):
-    pyperclip.copy(text)
-    st.success("Copied to clipboard!")
 
 # Define the Streamlit app
 st.title("Search for ID by contact details")
