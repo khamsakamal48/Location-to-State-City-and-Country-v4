@@ -4,7 +4,6 @@ pip install requests
 pip install streamlit
 pip install python-dotenv
 pip install regex
-pip install pyperclip
 pip install pandas
 
 # To fix
