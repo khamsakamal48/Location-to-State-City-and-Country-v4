@@ -30,12 +30,13 @@ search_box = st.text_input("Enter contact detail to search:")
 
 # Filter the dataframe by the entered email and show the corresponding ID
 if search_box:
-    result = data.loc[data['Phone Number'] == search_box, 'System Record ID'].values
-    if result:
+    # result = data.loc[data['Phone Number'] == search_box, 'System Record ID'].values
+    result = data.loc[data['Phone Number'].str.strip().str.match(search_box.strip(),case=False), 'System Record ID']
+    # if not result.empty:
+    if len(result.unique()) == 1:
         st.write("The ID for the entered contact is:")
-        # result = str(result[0])
 
-        st.code(result[0])
+        st.code(result.values[0])
         
     else:
-        st.write("No ID found for the entered contact.")
+        st.write("No ID found for the entered contact. Kindly check manually in Raisers Edge.")
