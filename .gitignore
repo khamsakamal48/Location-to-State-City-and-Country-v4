@@ -1,1 +1,6 @@
-Databases/System\ Record\ IDs.CSV
+**/.env
+.env
+**/.csv
+Databases/*
+*.json
+Logs/*.log
