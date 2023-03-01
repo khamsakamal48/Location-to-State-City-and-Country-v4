@@ -37,10 +37,10 @@ search_box = st.text_input("Enter contact detail to search:")
 if search_box:
     result = data.loc[data['Phone Number'] == search_box, 'System Record ID'].values
     if result:
-        st.write("The ID for the entered contact is:", result[0])
-        result = str(result[0])
+        st.write("The ID for the entered contact is:")
+        # result = str(result[0])
 
-        if st.button("Copy to Clipboard"):
-            copy_to_clipboard(result)
+        st.code(result[0])
+        
     else:
         st.write("No ID found for the entered contact.")
