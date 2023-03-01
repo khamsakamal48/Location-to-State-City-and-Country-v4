@@ -14,10 +14,10 @@ hide_streamlit_style = """
             """            
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Load the CSV file into a Pandas dataframe
+# Load the Parquet file into a Pandas dataframe
 @st.cache_data
 def get_data():
-    data = pd.read_csv('Databases/System Record IDs.CSV', encoding='latin1')
+    data = pd.read_parquet('Databases/System Record IDs')
     return data
 
 data = get_data()
@@ -30,9 +30,8 @@ search_box = st.text_input("Enter contact detail to search:")
 
 # Filter the dataframe by the entered email and show the corresponding ID
 if search_box:
-    # result = data.loc[data['Phone Number'] == search_box, 'System Record ID'].values
-    result = data.loc[data['Phone Number'].str.strip().str.match(search_box.strip(),case=False), 'System Record ID']
-    # if not result.empty:
+    result = data.loc[data['address'].str.strip().str.match(search_box.strip(),case=False), 'constituent_id']
+
     if len(result.unique()) == 1:
         st.write("The ID for the entered contact is:")
 
