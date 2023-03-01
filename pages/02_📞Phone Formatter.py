@@ -75,4 +75,3 @@ table_html = data.to_html(classes="data", header="true", index=False, justify='l
 table_html = table_html.replace('<table', '<table style="width:100%"')
 table_html = f'<div style="overflow: auto;">{table_html}</div>'
 st.write(table_html, unsafe_allow_html=True)
-

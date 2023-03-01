@@ -5,6 +5,3 @@ pip install streamlit
 pip install python-dotenv
 pip install regex
 pip install pandas
-
-# To fix
-Google Maps API response in non-English languages
