@@ -62,5 +62,6 @@ try:
     # Blackbaud Token URL
     get_token()
     
-except:
+except Exception as Argument:
+    print(Argument)
     pass
