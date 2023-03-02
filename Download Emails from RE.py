@@ -11,10 +11,10 @@ import pandas as pd
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
 from email.mime.application import MIMEApplication
 from jinja2 import Environment
 from datetime import datetime
+from datetime import time
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from dotenv import load_dotenv
@@ -98,78 +98,83 @@ def send_error_emails(subject):
     logging.info('Sending email for an error')
     
     message = MIMEMultipart()
-    message['Subject'] = subject
-    message['From'] = MAIL_USERN
-    message['To'] = SEND_TO
+    message["Subject"] = subject
+    message["From"] = MAIL_USERN
+    message["To"] = SEND_TO
 
     # Adding Reply-to header
     message.add_header('reply-to', MAIL_USERN)
         
-    TEMPLATE='''
-    <table style='background-color: #ffffff; border-color: #ffffff; width: auto; margin-left: auto; margin-right: auto;'>
+    TEMPLATE="""
+    <table style="background-color: #ffffff; border-color: #ffffff; width: auto; margin-left: auto; margin-right: auto;">
     <tbody>
-    <tr style='height: 127px;'>
-    <td style='background-color: #363636; width: 100%; text-align: center; vertical-align: middle; height: 127px;'>&nbsp;
-    <h1><span style='color: #ffffff;'>&nbsp;Raiser's Edge Automation: {{job_name}} Failed</span>&nbsp;</h1>
+    <tr style="height: 127px;">
+    <td style="background-color: #363636; width: 100%; text-align: center; vertical-align: middle; height: 127px;">&nbsp;
+    <h1><span style="color: #ffffff;">&nbsp;Raiser's Edge Automation: {{job_name}} Failed</span>&nbsp;</h1>
     </td>
     </tr>
-    <tr style='height: 18px;'>
-    <td style='height: 18px; background-color: #ffffff; border-color: #ffffff;'>&nbsp;</td>
+    <tr style="height: 18px;">
+    <td style="height: 18px; background-color: #ffffff; border-color: #ffffff;">&nbsp;</td>
     </tr>
-    <tr style='height: 18px;'>
-    <td style='width: 100%; height: 18px; background-color: #ffffff; border-color: #ffffff; text-align: center; vertical-align: middle;'>&nbsp;<span style='color: #455362;'>This is to notify you that execution of Auto-updating Alumni records has failed.</span>&nbsp;</td>
+    <tr style="height: 18px;">
+    <td style="width: 100%; height: 18px; background-color: #ffffff; border-color: #ffffff; text-align: center; vertical-align: middle;">&nbsp;<span style="color: #455362;">This is to notify you that execution of Auto-updating Alumni records has failed.</span>&nbsp;</td>
     </tr>
-    <tr style='height: 18px;'>
-    <td style='height: 18px; background-color: #ffffff; border-color: #ffffff;'>&nbsp;</td>
+    <tr style="height: 18px;">
+    <td style="height: 18px; background-color: #ffffff; border-color: #ffffff;">&nbsp;</td>
     </tr>
-    <tr style='height: 61px;'>
-    <td style='width: 100%; background-color: #2f2f2f; height: 61px; text-align: center; vertical-align: middle;'>
-    <h2><span style='color: #ffffff;'>Job details:</span></h2>
+    <tr style="height: 61px;">
+    <td style="width: 100%; background-color: #2f2f2f; height: 61px; text-align: center; vertical-align: middle;">
+    <h2><span style="color: #ffffff;">Job details:</span></h2>
     </td>
     </tr>
-    <tr style='height: 52px;'>
-    <td style='height: 52px;'>
-    <table style='background-color: #2f2f2f; width: 100%; margin-left: auto; margin-right: auto; height: 42px;'>
+    <tr style="height: 52px;">
+    <td style="height: 52px;">
+    <table style="background-color: #2f2f2f; width: 100%; margin-left: auto; margin-right: auto; height: 42px;">
     <tbody>
     <tr>
-    <td style='width: 50%; text-align: center; vertical-align: middle;'>&nbsp;<span style='color: #ffffff;'>Job :</span>&nbsp;</td>
-    <td style='background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;'>&nbsp;{{job_name}}&nbsp;</td>
+    <td style="width: 50%; text-align: center; vertical-align: middle;">&nbsp;<span style="color: #ffffff;">Job :</span>&nbsp;</td>
+    <td style="background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;">&nbsp;{{job_name}}&nbsp;</td>
     </tr>
     <tr>
-    <td style='width: 50%; text-align: center; vertical-align: middle;'>&nbsp;<span style='color: #ffffff;'>Failed on :</span>&nbsp;</td>
-    <td style='background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;'>&nbsp;{{current_time}}&nbsp;</td>
+    <td style="width: 50%; text-align: center; vertical-align: middle;">&nbsp;<span style="color: #ffffff;">Failed on :</span>&nbsp;</td>
+    <td style="background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;">&nbsp;{{current_time}}&nbsp;</td>
     </tr>
     </tbody>
     </table>
     </td>
     </tr>
-    <tr style='height: 18px;'>
-    <td style='height: 18px; background-color: #ffffff;'>&nbsp;</td>
+    <tr style="height: 18px;">
+    <td style="height: 18px; background-color: #ffffff;">&nbsp;</td>
     </tr>
-    <tr style='height: 18px;'>
-    <td style='height: 18px; width: 100%; background-color: #ffffff; text-align: center; vertical-align: middle;'>Below is the detailed error log,</td>
+    <tr style="height: 18px;">
+    <td style="height: 18px; width: 100%; background-color: #ffffff; text-align: center; vertical-align: middle;">Below is the detailed error log,</td>
     </tr>
-    <tr style='height: 217.34375px;'>
-    <td style='height: 217.34375px; background-color: #f8f9f9; width: 100%; text-align: left; vertical-align: middle;'>{{error_log_message}}</td>
+    <tr style="height: 217.34375px;">
+    <td style="height: 217.34375px; background-color: #f8f9f9; width: 100%; text-align: left; vertical-align: middle;">{{error_log_message}}</td>
     </tr>
     </tbody>
     </table>
-    '''
-    
+    """
+
     # Create a text/html message from a rendered template
     emailbody = MIMEText(
         Environment().from_string(TEMPLATE).render(
             job_name = subject,
-            current_time=datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+            current_time=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             error_log_message = Argument
-        ), 'html'
+        ), "html"
     )
-    
+
     # Add HTML parts to MIMEMultipart message
     # The email client will try to render the last part first
-    message.attach(emailbody)
-    attach_file_to_email(message, 'Process.log')
-    emailcontent = message.as_string()
+    try:
+        message.attach(emailbody)
+        attach_file_to_email(message, f'Logs/{process_name}.log')
+        emailcontent = message.as_string()
+        
+    except:
+        message.attach(emailbody)
+        emailcontent = message.as_string()
     
     # Create secure connection with server and send email
     context = ssl._create_unverified_context()
@@ -182,19 +187,19 @@ def send_error_emails(subject):
     # Save copy of the sent email to sent items folder
     with imaplib.IMAP4_SSL(IMAP_URL, IMAP_PORT) as imap:
         imap.login(MAIL_USERN, MAIL_PASSWORD)
-        imap.append('Sent', '\\Seen', imaplib.Time2Internaldate(datetime.now()), emailcontent.encode('utf8'))
+        imap.append('Sent', '\\Seen', imaplib.Time2Internaldate(time.time()), emailcontent.encode('utf8'))
         imap.logout()
 
 def attach_file_to_email(message, filename):
     
     # Open the attachment file for reading in binary mode, and make it a MIMEApplication class
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         file_attachment = MIMEApplication(f.read())
-        
+    
     # Add header/name to the attachments    
     file_attachment.add_header(
-        'Content-Disposition',
-        f'attachment; filename= {filename}',
+        "Content-Disposition",
+        f"attachment; filename= {filename}",
     )
     
     # Attach the file to the message
