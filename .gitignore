@@ -4,3 +4,4 @@
 Databases/*
 *.json
 Logs/*.log
+Test.*
