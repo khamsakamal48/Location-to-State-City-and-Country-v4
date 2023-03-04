@@ -269,7 +269,7 @@ def check_errors(re_api_response):
     
     logging.info('Checking for exceptions')
     
-    error_keywords = ['error', 'failed', 'invalid', 'unauthorized']
+    error_keywords = ['error', 'failed', 'invalid', 'unauthorized', 'bad request', 'forbidden', 'not found']
     
     for keyword in error_keywords:
         if keyword in str(re_api_response).lower():
@@ -610,7 +610,6 @@ def update_employment(each_row, constituent_id):
     ### Load to DataFrame
     re_data = api_to_df(re_api_response).copy()
     re_data = re_data[['id', 'constituent_id', 'is_primary_business', 'name', 'reciprocal_type', 'relation_id', 'type', 'position']]
-    re_data.to_csv('Test.csv')
     
     ### Get list of employees in RE
     re_employer_list = re_data['name'].to_list()
@@ -763,6 +762,98 @@ def update_employment(each_row, constituent_id):
         ## Update Tags
         add_tags(source, 'Sync Source', str(employee_details.loc[0]['Organization Name'])[:50], constituent_id)
 
+def update_address(each_row, constituent_id):
+    
+    logging.info('Proceeding to update Address')
+    
+    each_row = pd.DataFrame(each_row)
+    
+    # Get addresses present in RE
+    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/addresses'
+    params = {}
+    
+    ### API request
+    get_request_re(url, params)
+    
+    ### Load to DataFrame
+    re_data = api_to_df(re_api_response).copy()
+    re_data = re_data[['id', 'constituent_id', 'formatted_address']]
+    re_data = re_data.replace(to_replace=['\r\n', '\t', '\n'], value=', ', regex=True)
+    re_data = re_data.replace(to_replace=['  '], value=' ', regex=True)
+    
+    ### Get list of addresses in RE
+    re_address_list = re_data['formatted_address'].to_list()
+    
+    # Get the new data
+    address_data = each_row[['Address Lines', 'City', 'State', 'Country', 'Postal Code']].reset_index(drop=True)
+    address_data['Address'] = address_data['Address Lines'].astype(str) + ' ' + address_data['City'].astype(str) + ' ' + address_data['State'].astype(str) + ' ' + address_data['Country'].astype(str) + ' ' + address_data['Postal Code'].astype(str)
+    address_data = address_data.replace(to_replace=['\r\n', '\t', '\n'], value=', ', regex=True)
+    address_data = address_data.replace(to_replace=['  '], value=' ', regex=True)
+    address_list = address_data['Address'].to_list()
+    
+    # Find Address that have to be updated
+    missing_values = []
+    for each_address in address_list:
+        try:
+            likely_org, score = process.extractOne(each_address, re_address_list)
+            if score < 90:
+                missing_values.append(each_address)
+        except:
+            missing_values.append(each_address)
+    
+    # Making sure that there are no duplicates in the missing list
+    if missing_values != []:
+        missing_values = [str(x) for x in missing_values]
+        missing = list(process.dedupe(missing_values, threshold=90))
+        missing_values = missing
+    
+    # Get Data source (Limiting to 50 characters)
+    source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Address"[:50]
+    
+    # Check if there's any new addresses to add and that the existing address (to be updated) is not empty
+    if missing_values == [] and not pd.isna(each_row.loc[0]['Address Lines']):
+        # Mark existing org as primary
+        for each_address in re_address_list:
+            try:
+                likely_org, score = process.extractOne(each_address, address_list)
+                if score > 90:
+                    address = each_address
+                    break
+            except:
+                pass
+        
+        address_id = re_data[re_data['formatted_address'] == address].iloc[0]['id']
+        
+        # Update in RE
+        url = f'https://api.sky.blackbaud.com/constituent/v1/addresses/{address_id}'
+        
+        params = {
+            'preferred': True
+        }
+        
+        patch_request_re(url, params)
+    
+    else:
+        
+        # Upload missing address details
+        url = 'https://api.sky.blackbaud.com/constituent/v1/addresses'
+        
+        params = {
+            'address_lines': str(address_list[0]).replace(', ', '\r\n'),
+            'city': str(each_row['City'][0]),
+            'state': str(each_row['State'][0]),
+            'country': str(each_row['Country'][0]),
+            'postal_code': str(each_row['Postal Code'][0]),
+            'constituent_id': constituent_id,
+            'type': 'Home',
+            'preferred': True
+        }
+        
+        post_request_re(url, params)
+        
+        ## Update Tags
+        add_tags(source, 'Sync source', str(address_list[0])[:50], constituent_id)
+
 try:
     
     # Set current directory
@@ -814,6 +905,9 @@ try:
         
         ## Update Employment
         update_employment(each_row, constituent_id)
+        
+        ## Update Address
+        update_address(each_row, constituent_id)
     
     # Create database of file that's aready uploaded
     
