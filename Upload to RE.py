@@ -340,6 +340,21 @@ def patch_request_re(url, params):
     
     check_errors(re_api_response)
 
+def del_blank_values_in_json(d):
+    """
+    Delete keys with the value ``None`` in a dictionary, recursively.
+
+    This alters the input so you may wish to ``copy`` the dict first.
+    """
+    # For Python 3, write `list(d.items())`; `d.items()` won’t work
+    # For Python 2, write `d.items()`; `d.iteritems()` won’t work
+    for key, value in list(d.items()):
+        if value == "" or value == {} or value == [] or value == [""]:
+            del d[key]
+        elif isinstance(value, dict):
+            del_blank_values_in_json(value)
+    return d
+
 def api_to_df(response):
     
     logging.info('Loading API response to a DataFrame')
@@ -368,7 +383,7 @@ def add_tags(source, tag, update, constituent_id):
     
     post_request_re(url, params)
 
-def update_emails(each_row):
+def update_emails(each_row, constituent_id):
     
     logging.info('Proceeding to update Email')
     
@@ -380,9 +395,6 @@ def update_emails(each_row):
         [each_row.loc[0]['System Record ID'], each_row.loc[0]['Email 2']],
         [each_row.loc[0]['System Record ID'], each_row.loc[0]['Email 3']]
     ],columns=['System Record ID','Email'])
-    
-    # Get RE ID
-    constituent_id = int(email_list['System Record ID'][0])
     
     # Get Email address present in RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/emailaddresses'
@@ -465,7 +477,7 @@ def update_emails(each_row):
             ## Verified Tags
             add_tags(email, 'Verified Email', source, constituent_id)
 
-def update_phones(each_row):
+def update_phones(each_row, constituent_id):
     
     logging.info('Proceeding to update Phone Numbers')
     
@@ -477,9 +489,6 @@ def update_phones(each_row):
     phone_list = [phone_1, phone_2, phone_3]
     phone_list = [item for item in phone_list if not(pd.isnull(item)) == True]
     phone_list = [str(x) for x in phone_list]
-    
-    # Get RE ID
-    constituent_id = int(each_row.loc[0]['System Record ID'])
     
     # Get Phone Numbers present in RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/phones'
@@ -521,7 +530,7 @@ def update_phones(each_row):
     # Get Data source (Limiting to 50 characters)
     source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Phone"[:50]
     
-    # Check if there's any new email address to add and that the existing email address (to be updated) is not empty
+    # Check if there's any new phone number to add and that the existing phone number (to be updated) is not empty
     if missing_values == [] and not pd.isna(each_row.loc[0]['Phone number 1']):
         
         # Mark existing phone number as primary
@@ -535,8 +544,6 @@ def update_phones(each_row):
                 pass
         
         phone_id = int(re_data_complete[re_data_complete['number'] == phone].iloc[0]['id'])
-        
-        logging.info('I am here')
         
         url = f'https://api.sky.blackbaud.com/constituent/v1/phones/{phone_id}'
         
@@ -556,6 +563,7 @@ def update_phones(each_row):
         for phone in missing_values:
             
             if i == 0:
+                
                 params = {
                     'number': phone,
                     'constituent_id': constituent_id,
@@ -580,9 +588,180 @@ def update_phones(each_row):
             # Upload Tags
             ## Update Tags
             add_tags(source, 'Sync source', phone, constituent_id)
-                        
+            
             ## Verified Tags
             add_tags(phone, 'Verified Phone', source, constituent_id)
+
+def update_employment(each_row, constituent_id):
+    
+    logging.info('Proceeding to update Employment')
+    
+    each_row = pd.DataFrame(each_row)
+    
+    # Get existing relationships in RE
+    
+    ## Get relationship from RE
+    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/relationships'
+    params = {}
+    
+    ### API request
+    get_request_re(url, params)
+    
+    ### Load to DataFrame
+    re_data = api_to_df(re_api_response).copy()
+    re_data = re_data[['id', 'constituent_id', 'is_primary_business', 'name', 'reciprocal_type', 'relation_id', 'type', 'position']]
+    re_data.to_csv('Test.csv')
+    
+    ### Get list of employees in RE
+    re_employer_list = re_data['name'].to_list()
+    
+    # Get the new data
+    employee_details = each_row[['Organization Name', 'Position', 'Start Date', 'End Date']].reset_index(drop=True)
+    employee_list = employee_details['Organization Name'].to_list()
+    
+    # Find Org names that have to be updated
+    missing_values = []
+    for each_org in employee_list:
+        try:
+            likely_org, score = process.extractOne(each_org, re_employer_list)
+            if score < 90:
+                missing_values.append(each_org)
+        except:
+            missing_values.append(each_org)
+    
+    # Making sure that there are no duplicates in the missing list
+    if missing_values != []:
+        missing_values = [str(x) for x in missing_values]
+        missing = list(process.dedupe(missing_values, threshold=90))
+        missing_values = missing
+    
+    # Get Data source (Limiting to 50 characters)
+    source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Employment"[:50]
+    
+    # Get dates
+    try:
+        start_day = int(employee_details.loc[0]['Start Date'].day)
+    except:
+        start_day = ''
+    
+    try:
+        start_month = int(employee_details.loc[0]['Start Date'].month)
+    except:
+        start_month = ''
+    
+    try:
+        start_year = int(employee_details.loc[0]['Start Date'].year)
+    except:
+        start_year = ''
+    
+    try:
+        end_day = int(employee_details.loc[0]['End Date'].day)
+    except:
+        end_day = ''
+    
+    try:
+        end_month = int(employee_details.loc[0]['End Date'].month)
+    except:
+        end_month = ''
+    
+    try:
+        end_year = int(employee_details.loc[0]['End Date'].year)
+    except:
+        end_year = ''
+    
+    # Check if there's any new organisations to add and that the existing org name (to be updated) is not empty
+    if missing_values == [] and not pd.isna(each_row.loc[0]['Organization Name']):
+        
+        # Mark existing org as primary
+        for each_org in re_employer_list:
+            try:
+                likely_org, score = process.extractOne(each_org, employee_list)
+                if score > 90:
+                    org = each_org
+                    break
+            except:
+                pass
+        
+        relationship_id = re_data[re_data['name'] == org].iloc[0]['id']
+        
+        # Check if designation needs an update
+        designation = str(employee_details.loc[0]['Position'])
+        
+        re_designation  = str(re_data[re_data['id'] == relationship_id].iloc[0]['position'])
+        
+        # Update in RE
+        url = f'https://api.sky.blackbaud.com/constituent/v1/relationships/{int(relationship_id)}'
+        
+        if designation == re_designation:
+            designation = ''
+        
+        params = {
+                'is_primary_business': True,
+                'position': designation,
+                'start': {
+                    'd': start_day,
+                    'm': start_month,
+                    'y': start_year
+                },
+                'end': {
+                    'd': end_day,
+                    'm': end_month,
+                    'y': end_year
+                }
+            }
+        
+        # Delete blank values from JSON
+        for i in range(10):
+            params = del_blank_values_in_json(params.copy())
+        
+        patch_request_re(url, params)
+    
+    else:
+        
+        # Upload missing employment details
+        
+        url = 'https://api.sky.blackbaud.com/constituent/v1/relationships'
+        
+        ## Check if organisation is a University
+        school_matches = ['school', 'college', 'university', 'institute', 'iit', 'iim']
+        
+        if any(x in str(employee_details.loc[0]['Organization Name']).lower() for x in school_matches):
+            relationship = 'University'
+        
+        else:
+            relationship = 'Employer'
+        
+        params = {
+            'constituent_id': constituent_id,
+            'relation': {
+                'name': str(employee_details.loc[0]['Organization Name'])[:60],
+                'type': 'Organization'
+            },
+            'position': str(employee_details.loc[0]['Position'])[:50],
+            'start': {
+                'd': start_day,
+                'm': start_month,
+                'y': start_year
+            },
+            'end': {
+                'd': end_day,
+                'm': end_month,
+                'y': end_year
+            },
+            'type': relationship,
+            'reciprocal_type': 'Employee',
+            'is_primary_business': True
+        }
+        
+        # Delete blank values from JSON
+        for i in range(10):
+            params = del_blank_values_in_json(params.copy())
+        
+        ## Update in RE
+        post_request_re(url, params)
+        
+        ## Update Tags
+        add_tags(source, 'Sync Source', str(employee_details.loc[0]['Organization Name'])[:50], constituent_id)
 
 try:
     
@@ -622,11 +801,19 @@ try:
     for each_row in new_data.index:
         each_row = new_data[each_row:]
         
+        # Get RE ID
+        constituent_id = int(each_row.loc[0]['System Record ID'])
+        
+        logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
+        
         ## Update Email Addresses
-        update_emails(each_row)
+        update_emails(each_row, constituent_id)
         
         ## Update Phone Numbers
-        update_phones(each_row)
+        update_phones(each_row, constituent_id)
+        
+        ## Update Employment
+        update_employment(each_row, constituent_id)
     
     # Create database of file that's aready uploaded
     
@@ -636,7 +823,7 @@ except Exception as Argument:
     
     logging.error(Argument)
     
-    send_error_emails('Error while uploading data to RE | Location to State, City and Country v4')
+    # send_error_emails('Error while uploading data to RE | Location to State, City and Country v4')
 
 finally:
     
