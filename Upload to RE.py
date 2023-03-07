@@ -8,6 +8,7 @@ import re
 import imaplib
 import datetime
 import logging
+import time
 import pandas as pd
 import numpy as np
 
@@ -16,7 +17,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from jinja2 import Environment
 from datetime import datetime
-from datetime import time
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from dotenv import load_dotenv
@@ -360,7 +360,10 @@ def api_to_df(response):
     logging.info('Loading API response to a DataFrame')
     
     # Load from JSON to pandas
-    api_response = pd.json_normalize(response['value'])
+    try:
+        api_response = pd.json_normalize(response['value'])
+    except:
+        api_response = pd.json_normalize(response)
     
     # Load to a dataframe
     df = pd.DataFrame(data=api_response)
@@ -839,7 +842,7 @@ def update_address(each_row, constituent_id):
         url = 'https://api.sky.blackbaud.com/constituent/v1/addresses'
         
         params = {
-            'address_lines': str(address_list[0]).replace(', ', '\r\n'),
+            'address_lines': str(address_list[0]).replace(', ', ', \r\n'),
             'city': str(each_row['City'][0]),
             'state': str(each_row['State'][0]),
             'country': str(each_row['Country'][0]),
@@ -853,6 +856,221 @@ def update_address(each_row, constituent_id):
         
         ## Update Tags
         add_tags(source, 'Sync source', str(address_list[0])[:50], constituent_id)
+
+def update_education(each_row, constituent_id):
+    
+    logging.info('Proceeding to update Education')
+    
+    each_row = pd.DataFrame(each_row)
+    
+    # Get the new data
+    education_details = each_row[['Class of', 'Degree', 'Department', 'Hostel']].reset_index(drop=True)
+    education_class_of = int(education_details['Class of'][0])
+    education_degree = str(education_details['Degree'][0])
+    education_department = str(education_details['Department'][0])
+    education_hostel = str(education_details['Hostel'][0])
+    
+    # Get education present in RE
+    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/educations'
+    params = {}
+    
+    get_request_re(url, params)
+    
+    # Load to a dataframe
+    re_data = api_to_df(re_api_response).copy()
+    re_data = re_data[re_data['school'] == 'Indian Institute of Technology Bombay']
+
+    
+    # Check if number of educations in RE
+    if len(re_data) == 1:
+        
+        education_id = int(re_data['id'][0])
+        
+        try:
+            re_class_of = int(re_data['class_of'][0])
+        except:
+            re_class_of = 0
+        
+        try:
+            re_degree = str(re_data['degree'][0])
+        except:
+            re_degree = ''
+        
+        try:
+            re_department = str(re_data['majors'][0][2:-2])
+        except:
+            re_department = ''
+        
+        try:
+            re_hostel = str(re_data['social_organization'][0])
+        except:
+            re_hostel = ''
+        
+        # Get Data source (Limiting to 50 characters)
+        source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Education"[:50]
+        
+        # Get current year
+        current_year = datetime.now().strftime("%Y")
+        
+        # All values as empty
+        class_of = ''
+        degree = ''
+        department = ''
+        hostel = ''
+        
+        if not(1962 <= int(re_class_of) <= int(current_year)):
+            
+            class_of = education_class_of
+            
+            # Degree
+            degree_df = pd.read_parquet('Databases/Degrees')
+            
+            if re_degree == 'Other' or re_degree == '':
+                degree = degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1]
+            
+            # Department
+            if re_department == '' or re_department == 'Other':
+                department = education_department
+            
+            if re_hostel == 'Other' or re_hostel == '':
+                hostel = education_hostel
+            
+            params = {
+                'class_of': class_of,
+                'date_graduated': {
+                    'y': class_of
+                },
+                'date_left': {
+                    'y': class_of
+                },
+                'degree': degree,
+                'majors': [
+                    department
+                ],
+                'social_organization': hostel
+            }
+            
+            # Delete blank values from JSON
+            for i in range(10):
+                params = del_blank_values_in_json(params.copy())
+            
+            # Check if there any data to upload
+            if params != {}:
+                
+                url = f'https://api.sky.blackbaud.com/constituent/v1/educations/{education_id}'
+                
+                patch_request_re(url, params)
+                
+                # Add Tags
+                add_tags(source, 'Sync source', str(params)[:50], constituent_id)
+        
+        elif re_class_of == education_class_of:
+            
+            class_of = ''
+            
+            # Degree
+            degree_df = pd.read_parquet('Databases/Degrees')
+            
+            if re_degree == 'Other' or re_degree == '':
+                degree = degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1]
+            
+            # Department
+            if re_department == '' or re_department == 'Other':
+                department = education_department
+            
+            if re_hostel == 'Other' or re_hostel == '':
+                hostel = education_hostel
+            
+            params = {
+                'class_of': class_of,
+                'date_graduated': {
+                    'y': class_of
+                },
+                'date_left': {
+                    'y': class_of
+                },
+                'degree': degree,
+                'majors': [
+                    department
+                ],
+                'social_organization': hostel
+            }
+            
+            # Delete blank values from JSON
+            for i in range(10):
+                params = del_blank_values_in_json(params.copy())
+            
+            # Check if there any data to upload
+            if params != {}:
+                
+                url = f'https://api.sky.blackbaud.com/constituent/v1/educations/{education_id}'
+                
+                patch_request_re(url, params)
+                
+                # Add Tags
+                add_tags(source, 'Sync source', str(params)[:50], constituent_id)
+        
+        else:
+            # Different education exists than what's provided
+            re_data_html = re_data.to_html(index=False, classes='table table-stripped')
+            each_row_html = each_row.to_html(index=False, classes='table table-stripped')
+            send_mail_different_education(re_data_html, each_row_html, 'Different education data exists in RE and the one provided by Alum')
+
+def send_mail_different_education(re_data, each_row, subject):
+    
+    logging.info('Sending email for different education')
+    
+    message = MIMEMultipart()
+    message["Subject"] = subject
+    message["From"] = MAIL_USERN
+    message["To"] = SEND_TO
+    
+    # Adding Reply-to header
+    message.add_header('reply-to', MAIL_USERN)
+    
+    TEMPLATE = """
+    <p>Hi,</p>
+    <p>This is to inform you that the Education data provided by Alum is different than that exists in Raisers Edge.</p>
+    <p><a href="https://host.nxt.blackbaud.com/constituent/records/{{constituent_id}}?envId=p-dzY8gGigKUidokeljxaQiA&amp;svcId=renxt" target="_blank"><strong>Open in RE</strong></a></p>
+    <p>&nbsp;</p>
+    <p>Below is the data for your comparison:</p>
+    <h3>Raisers Edge Data:</h3>
+    <p>{{re_data}}</p>
+    <p>&nbsp;</p>
+    <h3>Provided by Alum:</h3>
+    <p>{{education_data}}</p>
+    <p>&nbsp;</p>
+    <p>Thanks &amp; Regards</p>
+    <p>A Bot.</p>
+    """
+    
+    # Create a text/html message from a rendered template
+    emailbody = MIMEText(
+        Environment().from_string(TEMPLATE).render(
+            constituent_id = constituent_id,
+            re_data = re_data,
+            education_data = each_row
+        ), "html"
+    )
+    
+    # Add HTML parts to MIMEMultipart message
+    # The email client will try to render the last part first
+    message.attach(emailbody)
+    emailcontent = message.as_string()
+    
+    # Create secure connection with server and send email
+    context = ssl._create_unverified_context()
+    with smtplib.SMTP_SSL(SMTP_URL, SMTP_PORT, context=context) as server:
+        server.login(MAIL_USERN, MAIL_PASSWORD)
+        server.sendmail(
+            MAIL_USERN, SEND_TO, emailcontent
+        )
+    
+    # Save copy of the sent email to sent items folder
+    with imaplib.IMAP4_SSL(IMAP_URL, IMAP_PORT) as imap:
+        imap.login(MAIL_USERN, MAIL_PASSWORD)
+        imap.append('Sent', '\\Seen', imaplib.Time2Internaldate(time.time()), emailcontent.encode('utf8'))
+        imap.logout()
 
 try:
     
@@ -872,7 +1090,11 @@ try:
     set_api_request_strategy()
     
     # Get Excel file from Microsoft Form
-    # download_excel(FORM_URL)
+    download_excel(FORM_URL)
+    
+    # Pre-process the data
+    # remove NA and Other
+    # Remove \t and \n
     
     # Load file to a Dataframe
     load_data('Form Responses.xlsx')
@@ -908,8 +1130,11 @@ try:
         
         ## Update Address
         update_address(each_row, constituent_id)
+        
+        ## Update Education
+        update_education(each_row, constituent_id)
     
-    # Create database of file that's aready uploaded
+        # Create database of file that's aready uploaded
     
     # Report
 
