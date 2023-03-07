@@ -1083,12 +1083,7 @@ def update_name(each_row, constituent_id):
     
     # Get the new data
     name = each_row['Name2'][0]
-    logging.info(name)
     name.replace('\r\n', ' ').replace('\t', ' ').replace('\n', ' ').replace('  ', ' ')
-    # name = name.replace(to_replace=['\r\n', '\t', '\n'], value=' ', regex=True)
-    # name = name.replace(to_replace=['  '], value=' ', regex=True)
-    
-    logging.info(name)
     
     # Get First, Middle and Last Name
     name = HumanName(str(name))
@@ -1096,11 +1091,6 @@ def update_name(each_row, constituent_id):
     middle_name = str(name.middle).title()
     last_name = str(name.last).title()
     title = str(name.title).title()
-    
-    logging.info(first_name)
-    logging.info(middle_name)
-    logging.info(last_name)
-    logging.info(title)
     
     # Get existing name from RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}'
@@ -1119,7 +1109,7 @@ def update_name(each_row, constituent_id):
     re_title = re_data['title'][0]
     
     # Check if name needs an update
-    if bool(title):
+    if title is np.nan:
         if re_title != title:
             
             # Name needs an update
@@ -1172,6 +1162,61 @@ def update_name(each_row, constituent_id):
             source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Name"[:50]
             add_tags(source, 'Sync Source', str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:50], constituent_id)
 
+def clean_url(url):
+    
+    url = str(url)
+    
+    # Remove everything after ?
+    sep = '?'
+    try:
+        url = url.split(sep, 1)[0]
+    except:
+        pass
+    
+    # Remove https://www. and so on
+    try:
+        url = url.replace('https://www.', '').replace('http://www.', '').replace('www.', '').replace('http://', '').replace('https://', '').replace('in.linkedin', 'linkedin')
+    except:
+        pass
+    
+    # Remove / at the end
+    try:
+        if url[-1] == '/':
+            url = url[:-1]
+    except:
+        pass
+    
+    return url
+
+def update_linkedin(each_row, constituent_id):
+    
+    logging.info('Proceeding to update LinkedIn')
+    
+    each_row = pd.DataFrame(each_row)
+    
+    # Get the new data
+    linkedin = each_row['LinkedIn'][0]
+    
+    if linkedin is np.nan:
+        
+        linkedin = clean_url(linkedin)
+        
+        params = {
+            'address': linkedin,
+            'constituent_id': constituent_id,
+            'primary': True,
+            'type': 'LinkedIn'
+        }
+        
+        url = 'https://api.sky.blackbaud.com/constituent/v1/onlinepresences'
+        
+        # Update in RE
+        post_request_re(url, params)
+        
+        ## Update Tags
+        source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Online Presence"[:50]
+        add_tags(source, 'Sync Source', linkedin[:50], constituent_id)
+
 try:
     
     # Set current directory
@@ -1204,7 +1249,7 @@ try:
     # Remove data that's already uploaded
     
     ## Load data that's uploaded
-    load_data('Data Uploaded')
+    load_data('Data Uploaded1')
     data_uploaded = data.copy()
     
     ## Identify the new data which is yet to be uploaded
@@ -1220,29 +1265,31 @@ try:
         
         logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
         
-        # ## Update Email Addresses
-        # update_emails(each_row, constituent_id)
+        ## Update Email Addresses
+        update_emails(each_row, constituent_id)
         
-        # ## Update Phone Numbers
-        # update_phones(each_row, constituent_id)
+        ## Update Phone Numbers
+        update_phones(each_row, constituent_id)
         
-        # ## Update Employment
-        # update_employment(each_row, constituent_id)
+        ## Update Employment
+        update_employment(each_row, constituent_id)
         
-        # ## Update Address
-        # update_address(each_row, constituent_id)
+        ## Update Address
+        update_address(each_row, constituent_id)
         
-        # ## Update Education
-        # update_education(each_row, constituent_id)
+        ## Update Education
+        update_education(each_row, constituent_id)
         
         ## Update Name
         update_name(each_row, constituent_id)
         
-        ## Update LinkedIn URL
+        # Update LinkedIn URL
+        update_linkedin(each_row, constituent_id)
     
         # Create database of file that's aready uploaded
-    
-    # Report
+        # each_row = pd.DataFrame(each_row)
+        data_uploaded = pd.concat([data_uploaded, each_row], axis=0,  ignore_index=True)
+        data_uploaded.to_parquet('Databases/Data Uploaded1', index=False)
 
 except Exception as Argument:
     
