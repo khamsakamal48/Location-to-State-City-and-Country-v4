@@ -5,3 +5,4 @@ Databases/*
 *.json
 Logs/*.log
 Test.*
+.DS_Store
