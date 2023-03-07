@@ -22,6 +22,7 @@ from urllib3 import Retry
 from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+from nameparser import HumanName
 
 def set_current_directory():
     
@@ -1000,6 +1001,8 @@ def update_education(each_row, constituent_id):
             for i in range(10):
                 params = del_blank_values_in_json(params.copy())
             
+            logging.info(params)
+            
             # Check if there any data to upload
             if params != {}:
                 
@@ -1072,6 +1075,103 @@ def send_mail_different_education(re_data, each_row, subject):
         imap.append('Sent', '\\Seen', imaplib.Time2Internaldate(time.time()), emailcontent.encode('utf8'))
         imap.logout()
 
+def update_name(each_row, constituent_id):
+    
+    logging.info('Proceeding to update Names')
+    
+    each_row = pd.DataFrame(each_row)
+    
+    # Get the new data
+    name = each_row['Name2'][0]
+    logging.info(name)
+    name.replace('\r\n', ' ').replace('\t', ' ').replace('\n', ' ').replace('  ', ' ')
+    # name = name.replace(to_replace=['\r\n', '\t', '\n'], value=' ', regex=True)
+    # name = name.replace(to_replace=['  '], value=' ', regex=True)
+    
+    logging.info(name)
+    
+    # Get First, Middle and Last Name
+    name = HumanName(str(name))
+    first_name = str(name.first).title()
+    middle_name = str(name.middle).title()
+    last_name = str(name.last).title()
+    title = str(name.title).title()
+    
+    logging.info(first_name)
+    logging.info(middle_name)
+    logging.info(last_name)
+    logging.info(title)
+    
+    # Get existing name from RE
+    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}'
+    params = {}
+    
+    get_request_re(url, params)
+    
+    # Load to a DataFrame
+    re_data = api_to_df(re_api_response).copy()
+    re_data = re_data[['name', 'title', 'first', 'middle', 'last']]
+    
+    # RE Data
+    re_f_name = re_data['first'][0]
+    re_m_name = re_data['middle'][0]
+    re_l_name = re_data['last'][0]
+    re_title = re_data['title'][0]
+    
+    # Check if name needs an update
+    if bool(title):
+        if re_title != title:
+            
+            # Name needs an update
+            params = {
+                'title': str(title),
+                'first': str(first_name)[:50],
+                'middle': str(middle_name)[:50],
+                'last': str(last_name)[:50],
+                'former_name': str(str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:100]
+            }
+            
+            # Delete blank values from JSON
+            for i in range(10):
+                params = del_blank_values_in_json(params.copy())
+            
+            url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}'
+            
+            ## Update in RE
+            patch_request_re(url, params)
+            
+            ## Update Tags
+            source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Name"[:50]
+            add_tags(source, 'Sync Source', str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:50], constituent_id)
+            
+    else:
+        
+        if re_f_name != first_name or re_m_name != middle_name or re_l_name != last_name:
+            
+            
+            
+            # Name needs an update
+            params = {
+                'title': str(title),
+                'first': str(first_name)[:50],
+                'middle': str(middle_name)[:50],
+                'last': str(last_name)[:50],
+                'former_name': str(str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:100]
+            }
+            
+            # Delete blank values from JSON
+            for i in range(10):
+                params = del_blank_values_in_json(params.copy())
+            
+            url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}'
+            
+            ## Update in RE
+            patch_request_re(url, params)
+            
+            ## Update Tags
+            source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Name"[:50]
+            add_tags(source, 'Sync Source', str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:50], constituent_id)
+
 try:
     
     # Set current directory
@@ -1090,15 +1190,16 @@ try:
     set_api_request_strategy()
     
     # Get Excel file from Microsoft Form
-    download_excel(FORM_URL)
-    
-    # Pre-process the data
-    # remove NA and Other
-    # Remove \t and \n
+    # download_excel(FORM_URL)
     
     # Load file to a Dataframe
     load_data('Form Responses.xlsx')
     form_data = data.drop(columns = ['ID', 'Start time', 'Completion time', 'Email', 'Name'])
+    
+    # Pre-process the data
+    logging.info('Pre-processing data')
+    # Replace NA, 0 and Other with NaN
+    form_data = form_data.replace(to_replace=[0, 'NA', 'na', ''], value=np.NaN)
     
     # Remove data that's already uploaded
     
@@ -1119,20 +1220,25 @@ try:
         
         logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
         
-        ## Update Email Addresses
-        update_emails(each_row, constituent_id)
+        # ## Update Email Addresses
+        # update_emails(each_row, constituent_id)
         
-        ## Update Phone Numbers
-        update_phones(each_row, constituent_id)
+        # ## Update Phone Numbers
+        # update_phones(each_row, constituent_id)
         
-        ## Update Employment
-        update_employment(each_row, constituent_id)
+        # ## Update Employment
+        # update_employment(each_row, constituent_id)
         
-        ## Update Address
-        update_address(each_row, constituent_id)
+        # ## Update Address
+        # update_address(each_row, constituent_id)
         
-        ## Update Education
-        update_education(each_row, constituent_id)
+        # ## Update Education
+        # update_education(each_row, constituent_id)
+        
+        ## Update Name
+        update_name(each_row, constituent_id)
+        
+        ## Update LinkedIn URL
     
         # Create database of file that's aready uploaded
     
