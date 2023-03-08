@@ -1141,11 +1141,11 @@ def update_name(each_row, constituent_id):
             source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Name"[:50]
             add_tags(source, 'Sync Source', str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:50], constituent_id)
             
+            # Send email for different name
+            send_mail_different_name(str(str(re_title) + ' ' + str(re_f_name) + ' ' + str(re_m_name) + ' ' + str(re_l_name)), str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name)), 'Different name exists in Raisers Edge and the one shared by Alum')
     else:
         
         if re_f_name != first_name or re_m_name != middle_name or re_l_name != last_name:
-            
-            
             
             # Name needs an update
             params = {
@@ -1168,6 +1168,9 @@ def update_name(each_row, constituent_id):
             ## Update Tags
             source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Name"[:50]
             add_tags(source, 'Sync Source', str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:50], constituent_id)
+            
+            # Send email for different name
+            send_mail_different_name(str(str(re_title) + ' ' + str(re_f_name) + ' ' + str(re_m_name) + ' ' + str(re_l_name)), str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name)), 'Different name exists in Raisers Edge and the one shared by Alum')
 
 def clean_url(url):
     
@@ -1223,6 +1226,73 @@ def update_linkedin(each_row, constituent_id):
         ## Update Tags
         source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Online Presence"[:50]
         add_tags(source, 'Sync Source', linkedin[:50], constituent_id)
+
+def send_mail_different_name(re_name, new_name, subject):
+    
+    logging.info('Sending email for different names')
+    
+    message = MIMEMultipart()
+    message["Subject"] = subject
+    message["From"] = MAIL_USERN
+    message["To"] = SEND_TO
+    
+    # Adding Reply-to header
+    message.add_header('reply-to', MAIL_USERN)
+    
+    TEMPLATE = """
+    <p>Hi,</p>
+    <p>This is to inform you that the name provided by Alum is different than that exists in Raisers Edge.</p>
+    <p>The new one has been updated in Raisers Edge, and the Existing name is stored as &#39;<u>Former Name</u>&#39; in RE.</p>
+    <p><a href="https://host.nxt.blackbaud.com/constituent/records/{{constituent_id}}?envId=p-dzY8gGigKUidokeljxaQiA&amp;svcId=renxt" target="_blank"><strong>Open in RE</strong></a></p>
+    <table align="left" border="1" cellpadding="1" cellspacing="1" style="width:500px">
+        <thead>
+            <tr>
+                <th scope="col">Existing Name</th>
+                <th scope="col">New Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="text-align:center">{{re_name}}</td>
+                <td style="text-align:center">{{new_name}}</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p>&nbsp;</p>
+    <p>Thanks &amp; Regards</p>
+    <p>A Bot.</p>
+    """
+    
+    # Create a text/html message from a rendered template
+    emailbody = MIMEText(
+        Environment().from_string(TEMPLATE).render(
+            constituent_id = constituent_id,
+            re_name = re_name,
+            new_name = new_name
+        ), "html"
+    )
+    
+    # Add HTML parts to MIMEMultipart message
+    # The email client will try to render the last part first
+    message.attach(emailbody)
+    emailcontent = message.as_string()
+    
+    # Create secure connection with server and send email
+    context = ssl._create_unverified_context()
+    with smtplib.SMTP_SSL(SMTP_URL, SMTP_PORT, context=context) as server:
+        server.login(MAIL_USERN, MAIL_PASSWORD)
+        server.sendmail(
+            MAIL_USERN, SEND_TO, emailcontent
+        )
+    
+    # Save copy of the sent email to sent items folder
+    with imaplib.IMAP4_SSL(IMAP_URL, IMAP_PORT) as imap:
+        imap.login(MAIL_USERN, MAIL_PASSWORD)
+        imap.append('Sent', '\\Seen', imaplib.Time2Internaldate(time.time()), emailcontent.encode('utf8'))
+        imap.logout()
 
 try:
     
@@ -1294,7 +1364,6 @@ try:
         update_linkedin(each_row, constituent_id)
     
         # Create database of file that's aready uploaded
-        # each_row = pd.DataFrame(each_row)
         data_uploaded = pd.concat([data_uploaded, each_row], axis=0,  ignore_index=True)
         data_uploaded.to_parquet('Databases/Data Uploaded1', index=False)
 
