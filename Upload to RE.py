@@ -1207,7 +1207,7 @@ def update_linkedin(each_row, constituent_id):
     # Get the new data
     linkedin = each_row['LinkedIn'][0]
     
-    if linkedin is np.nan:
+    if 'linkedin' in linkedin:
         
         linkedin = clean_url(linkedin)
         
@@ -1360,8 +1360,9 @@ try:
         
         # Update LinkedIn URL
         update_linkedin(each_row, constituent_id)
-    
+        
         # Create database of file that's aready uploaded
+        logging.info('Updating Database of synced records')
         data_uploaded = pd.concat([data_uploaded, each_row], axis=0,  ignore_index=True)
         data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
         
