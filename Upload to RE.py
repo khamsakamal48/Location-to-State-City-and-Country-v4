@@ -869,7 +869,7 @@ def update_education(each_row, constituent_id):
     education_class_of = int(education_details['Class of'][0])
     education_degree = str(education_details['Degree'][0])
     education_department = str(education_details['Department'][0])
-    education_hostel = str(education_details['Hostel'][0])
+    education_hostel = str(education_details['Hostel'][0]).replace('[', '').replace('"', '').replace(']', '')
     
     # Get education present in RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/educations'
