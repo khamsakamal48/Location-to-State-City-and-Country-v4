@@ -1207,7 +1207,7 @@ def update_linkedin(each_row, constituent_id):
     # Get the new data
     linkedin = each_row['LinkedIn'][0]
     
-    if 'linkedin' in linkedin:
+    if 'linkedin' in str(linkedin):
         
         linkedin = clean_url(linkedin)
         
