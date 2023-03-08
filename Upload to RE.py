@@ -232,8 +232,6 @@ def load_data(file):
     
     logging.info('Loading data to Pandas Dataframe')
     
-    global data
-    
     # Get extension
     ext = os.path.splitext(file)[1].lower()
     
@@ -253,18 +251,20 @@ def load_data(file):
     else:
         # Load file to DataFrame
         data = pd.read_parquet(f'Databases/{file}')
+    
+    return data
 
 def find_remaining_data(all_df, partial_df):
     
     logging.info('Identifying missing data between two Panda Dataframes')
-    
-    global remaining_data
     
     # Merge dataframes A and B based on common columns
     merged_df = pd.merge(all_df, partial_df, how='outer', indicator=True)
     
     # Extract rows from A that are not in B into a new dataframe C
     remaining_data = merged_df.loc[merged_df['_merge'] == 'left_only', all_df.columns]
+    
+    return remaining_data
 
 def check_errors(re_api_response):
     
@@ -1326,12 +1326,10 @@ try:
     # Remove data that's already uploaded
     
     ## Load data that's uploaded
-    load_data('Data Uploaded')
-    data_uploaded = data.copy()
+    data_uploaded = load_data('Data Uploaded').copy()
     
     ## Identify the new data which is yet to be uploaded
-    find_remaining_data(form_data, data_uploaded)
-    new_data = remaining_data.copy()
+    new_data = find_remaining_data(form_data, data_uploaded).copy()
     
     # Upload data to RE
     for each_row in new_data.index:
