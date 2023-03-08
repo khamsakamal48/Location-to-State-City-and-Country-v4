@@ -1312,7 +1312,7 @@ try:
     set_api_request_strategy()
     
     # Get Excel file from Microsoft Form
-    # download_excel(FORM_URL)
+    download_excel(FORM_URL)
     
     # Load file to a Dataframe
     load_data('Form Responses.xlsx')
@@ -1326,7 +1326,7 @@ try:
     # Remove data that's already uploaded
     
     ## Load data that's uploaded
-    load_data('Data Uploaded1')
+    load_data('Data Uploaded')
     data_uploaded = data.copy()
     
     ## Identify the new data which is yet to be uploaded
@@ -1365,13 +1365,23 @@ try:
     
         # Create database of file that's aready uploaded
         data_uploaded = pd.concat([data_uploaded, each_row], axis=0,  ignore_index=True)
-        data_uploaded.to_parquet('Databases/Data Uploaded1', index=False)
+        data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
+        
+        # Sleep for 60 seconds
+        logging.info('Sleeping for 60 seconds')
+        time.sleep(60)
+    
+    # Check for errors
+    with open(f'Logs/{process_name}.log') as log:
+        contents = log.read()
+        check_errors(contents)
+        contents.close()
 
 except Exception as Argument:
     
     logging.error(Argument)
     
-    # send_error_emails('Error while uploading data to RE | Location to State, City and Country v4')
+    send_error_emails('Error while uploading data to RE | Database Update Form-Model')
 
 finally:
     
