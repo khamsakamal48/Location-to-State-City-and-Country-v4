@@ -1315,8 +1315,8 @@ try:
     download_excel(FORM_URL)
     
     # Load file to a Dataframe
-    load_data('Form Responses.xlsx')
-    form_data = data.drop(columns = ['ID', 'Start time', 'Completion time', 'Email', 'Name'])
+    form_data = load_data('Form Responses.xlsx')
+    form_data.drop(columns = ['ID', 'Start time', 'Completion time', 'Email', 'Name'], inplace=True)
     
     # Pre-process the data
     logging.info('Pre-processing data')
