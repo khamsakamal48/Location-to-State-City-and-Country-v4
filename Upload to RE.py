@@ -1315,7 +1315,7 @@ try:
     download_excel(FORM_URL)
     
     # Load file to a Dataframe
-    form_data = load_data('Form Responses.xlsx')
+    form_data = load_data('Form Responses.xlsx').copy()
     form_data.drop(columns = ['ID', 'Start time', 'Completion time', 'Email', 'Name'], inplace=True)
     
     # Pre-process the data
@@ -1373,7 +1373,6 @@ try:
     with open(f'Logs/{process_name}.log') as log:
         contents = log.read()
         check_errors(contents)
-        contents.close()
 
 except Exception as Argument:
     
