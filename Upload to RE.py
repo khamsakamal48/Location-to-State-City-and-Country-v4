@@ -1018,6 +1018,13 @@ def update_education(each_row, constituent_id):
             re_data_html = re_data.to_html(index=False, classes='table table-stripped')
             each_row_html = each_row.to_html(index=False, classes='table table-stripped')
             send_mail_different_education(re_data_html, each_row_html, 'Different education data exists in RE and the one provided by Alum')
+    
+    else:
+        
+        # Multiple education exists than what's provided
+        re_data_html = re_data.to_html(index=False, classes='table table-stripped')
+        each_row_html = each_row.to_html(index=False, classes='table table-stripped')
+        send_mail_different_education(re_data_html, each_row_html, 'Multiple education data exists in RE')
 
 def send_mail_different_education(re_data, each_row, subject):
     
