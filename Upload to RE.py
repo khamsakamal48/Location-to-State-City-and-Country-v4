@@ -205,7 +205,7 @@ def attach_file_to_email(message, filename):
     # Add header/name to the attachments    
     file_attachment.add_header(
         "Content-Disposition",
-        f"attachment; filename= {filename}",
+        f"attachment; filename= {filename.replace('Logs', '')}",
     )
     
     # Attach the file to the message
