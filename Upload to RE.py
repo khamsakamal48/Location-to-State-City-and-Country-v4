@@ -361,7 +361,13 @@ def api_to_df(response):
     try:
         api_response = pd.json_normalize(response['value'])
     except:
-        api_response = pd.json_normalize(response)
+        try:
+            api_response = pd.json_normalize(response)
+        except:
+            try:
+                api_response = pd.json_normalize(response['value'], errors='ignore')
+            except:
+                api_response = pd.json_normalize(response, errors='ignore')
     
     # Load to a dataframe
     df = pd.DataFrame(data=api_response)
