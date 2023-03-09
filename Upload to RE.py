@@ -1130,7 +1130,13 @@ def update_name(each_row, constituent_id):
     # Get First, Middle and Last Name
     name = HumanName(str(name))
     first_name = str(name.first).title()
-    middle_name = str(name.middle).title()
+    
+    # In case there's no middle name
+    try:
+        middle_name = str(name.middle).title()
+    except:
+        middle_name = ''
+    
     last_name = str(name.last).title()
     title = str(name.title).title()
     
@@ -1142,11 +1148,21 @@ def update_name(each_row, constituent_id):
     
     # Load to a DataFrame
     re_data = api_to_df(re_api_response).copy()
-    re_data = re_data[['name', 'title', 'first', 'middle', 'last']]
+    
+    # When there's no middle name in RE
+    try:
+        re_data = re_data[['name', 'title', 'first', 'middle', 'last']]
+    except:
+        re_data = re_data[['name', 'title', 'first', 'last']]
     
     # RE Data
     re_f_name = re_data['first'][0]
-    re_m_name = re_data['middle'][0]
+    
+    try:
+        re_m_name = re_data['middle'][0]
+    except:
+        re_m_name = ''
+    
     re_l_name = re_data['last'][0]
     re_title = re_data['title'][0]
     
