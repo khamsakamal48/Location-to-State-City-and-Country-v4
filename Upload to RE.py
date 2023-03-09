@@ -387,15 +387,11 @@ def add_tags(source, tag, update, constituent_id):
 def update_emails(each_row, constituent_id):
     
     logging.info('Proceeding to update Email')
-    
+
     # Get email address list
-    email_list = each_row[['System Record ID', 'Email 1', 'Email 2', 'Email 3']].reset_index(drop=True)
-    email_list = pd.DataFrame(
-    [
-        [each_row.loc[0]['System Record ID'], each_row.loc[0]['Email 1']],
-        [each_row.loc[0]['System Record ID'], each_row.loc[0]['Email 2']],
-        [each_row.loc[0]['System Record ID'], each_row.loc[0]['Email 3']]
-    ],columns=['System Record ID','Email'])
+    email_list = each_row[['Email 1', 'Email 2', 'Email 3']].T
+    email_list.columns = ['Email']
+    email_list = email_list[['Email']].reset_index(drop=True).dropna()
     
     # Get Email address present in RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/emailaddresses'
