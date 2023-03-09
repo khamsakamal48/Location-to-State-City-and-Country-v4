@@ -402,27 +402,33 @@ def update_emails(each_row, constituent_id):
     # Load to Dataframe
     re_data = api_to_df(re_api_response).copy()
     
+    # Get emails in RE
+    re_email = re_data[['address']]
+    re_email.columns = ['Email']
+    
     # Find missing Email Addresses
-    missing_values = set(email_list['Email']).difference(set(re_data['address']))
-    missing_values = pd.DataFrame(list(missing_values), columns=['Email']).dropna().reset_index(drop=True)
+    merged_df = pd.merge(email_list, re_email, how='outer', indicator=True)
+    missing_values = merged_df.loc[merged_df['_merge'] == 'left_only', email_list.columns]
+    
+    missing_values = pd.DataFrame(missing_values).reset_index(drop=True)
     
     # Get Data source (Limiting to 50 characters)
-    source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Email"[:50]
+    source = f"{each_row['Enter the source of your data?'][0].title()} - Auto | Email"[:50]
     
     # Check if there's any new email address to add and that the existing email address (to be updated) is not empty
     if len(missing_values) == 0 and not pd.isna(each_row.loc[0]['Email 1']):
         
         ## Mark existing email as primary
-        email = each_row.loc[0]['Email 1']
+        email = each_row['Email 1'][0]
         
-        email_address_id = int(re_data[re_data['address'] == email].iloc[0]['id'])
+        email_address_id = int(re_data[re_data['address'] == email]['id'])
         
         url = f'https://api.sky.blackbaud.com/constituent/v1/emailaddresses/{email_address_id}'
         
         params = {
             'primary': True
         }
-
+        
         patch_request_re(url, params)
         
         # Adding verified tag
