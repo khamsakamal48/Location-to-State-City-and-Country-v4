@@ -545,8 +545,6 @@ def update_phones(each_row, constituent_id):
             pass
     
     # Find missing phone numbers
-    # missing_values = set(phone_list['Phone']).difference(set(re_data['number']))
-    # missing_values = pd.DataFrame(list(missing_values), columns=['Phone']).dropna().reset_index(drop=True)
     missing_values = []
     for each_phone in phone_list:
         try:
@@ -1370,7 +1368,7 @@ try:
     # Pre-process the data
     logging.info('Pre-processing data')
     # Replace NA, 0 and Other with NaN
-    form_data = form_data.replace(to_replace=[0, 'NA', 'na', ''], value=np.NaN)
+    form_data = form_data.replace(to_replace=[0, 'NA', 'na', 'Other', 'other'], value='')
     
     # Remove data that's already uploaded
     
