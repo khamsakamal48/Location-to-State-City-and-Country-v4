@@ -644,7 +644,17 @@ def update_employment(each_row, constituent_id):
     
     ### Load to DataFrame
     re_data = api_to_df(re_api_response).copy()
-    re_data = re_data[['id', 'constituent_id', 'is_primary_business', 'name', 'reciprocal_type', 'relation_id', 'type', 'position']]
+    try:
+        re_data = re_data[['id', 'constituent_id', 'is_primary_business', 'name', 'reciprocal_type', 'relation_id', 'type', 'position']]
+    except:
+        # When there is no orrganisation in RE
+        columns = ['id', 'constituent_id', 'is_primary_business', 'name', 'reciprocal_type', 'relation_id', 'type', 'position']
+        
+        ## Create a dictionary with column names as keys and NaN as values for a single row
+        re_data = {column: [np.nan] for column in columns}
+        
+        ## Create a DataFrame using the dictionary
+        re_data = pd.DataFrame(re_data)
     
     ### Get list of employees in RE
     re_employer_list = re_data['name'].to_list()
