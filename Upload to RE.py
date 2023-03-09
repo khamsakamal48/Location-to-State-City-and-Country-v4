@@ -587,7 +587,7 @@ def update_phones(each_row, constituent_id):
         patch_request_re(url, params)
         
         # Adding verified tag
-        add_tags(phone, 'Verified Phone', source, constituent_id)
+        add_tags(int(float(str(phone))), 'Verified Phone', source, constituent_id)
     
     else:
     
@@ -620,10 +620,10 @@ def update_phones(each_row, constituent_id):
             
             # Upload Tags
             ## Update Tags
-            add_tags(source, 'Sync source', phone, constituent_id)
+            add_tags(source, 'Sync source', int(float(str(phone))), constituent_id)
             
             ## Verified Tags
-            add_tags(phone, 'Verified Phone', source, constituent_id)
+            add_tags(int(float(str(phone))), 'Verified Phone', source, constituent_id)
 
 def update_employment(each_row, constituent_id):
     
