@@ -435,13 +435,9 @@ def update_emails(each_row, constituent_id):
         add_tags(email, 'Verified Email', source, constituent_id)
     
     else:
-    
-        ## Upload Missing Email Address
-        i = 0
-        for each_row in missing_values.index:
-            each_row = missing_values[each_row:]
-            
-            email = each_row.loc[0][0]
+        
+        if len(missing_values) == 1:
+            email = str(missing_values['Email'][0])
             
             # Type of email
             if '@iitb.ac.in' in email or '@iitbombay.org' in email or '@sjmsom.in' in email:
@@ -450,18 +446,10 @@ def update_emails(each_row, constituent_id):
             else:
                 email_type = 'Email'
             
-            if i == 0:
-                params = {
+            params = {
                     'address': email,
                     'constituent_id': constituent_id,
                     'primary': True,
-                    'type': email_type
-                }
-            
-            else:
-                params = {
-                    'address': email,
-                    'constituent_id': constituent_id,
                     'type': email_type
                 }
             
@@ -470,8 +458,6 @@ def update_emails(each_row, constituent_id):
             # Upload to RE
             post_request_re(url, params)
             
-            i += 1
-            
             # Upload Tags
             
             ## Update Tags
@@ -479,6 +465,52 @@ def update_emails(each_row, constituent_id):
                         
             ## Verified Tags
             add_tags(email, 'Verified Email', source, constituent_id)
+            
+        else:
+            
+            ## Upload Missing Email Address
+            i = 0
+            for index, row in missing_values.iterrows:
+                row = pd.DataFrame(row).T.reset_index(drop=True)
+                
+                email = str(row['Email'][0])
+                
+                # Type of email
+                if '@iitb.ac.in' in email or '@iitbombay.org' in email or '@sjmsom.in' in email:
+                    email_type = 'IITB Email'
+                
+                else:
+                    email_type = 'Email'
+                
+                if i == 0:
+                    params = {
+                        'address': email,
+                        'constituent_id': constituent_id,
+                        'primary': True,
+                        'type': email_type
+                    }
+                
+                else:
+                    params = {
+                        'address': email,
+                        'constituent_id': constituent_id,
+                        'type': email_type
+                    }
+                
+                url = 'https://api.sky.blackbaud.com/constituent/v1/emailaddresses'
+                
+                # Upload to RE
+                post_request_re(url, params)
+                
+                i += 1
+                
+                # Upload Tags
+                
+                ## Update Tags
+                add_tags(source, 'Sync source', email, constituent_id)
+                            
+                ## Verified Tags
+                add_tags(email, 'Verified Email', source, constituent_id)
 
 def update_phones(each_row, constituent_id):
     
