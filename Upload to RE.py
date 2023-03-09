@@ -631,8 +631,6 @@ def update_employment(each_row, constituent_id):
     
     logging.info('Proceeding to update Employment')
     
-    each_row = pd.DataFrame(each_row)
-    
     # Get existing relationships in RE
     
     ## Get relationship from RE
@@ -811,8 +809,6 @@ def update_address(each_row, constituent_id):
     
     logging.info('Proceeding to update Address')
     
-    each_row = pd.DataFrame(each_row)
-    
     # Get addresses present in RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/addresses'
     params = {}
@@ -902,8 +898,6 @@ def update_address(each_row, constituent_id):
 def update_education(each_row, constituent_id):
     
     logging.info('Proceeding to update Education')
-    
-    each_row = pd.DataFrame(each_row)
     
     # Get the new data
     education_details = each_row[['Class of', 'Degree', 'Department', 'Hostel']].reset_index(drop=True)
@@ -1127,8 +1121,6 @@ def update_name(each_row, constituent_id):
     
     logging.info('Proceeding to update Names')
     
-    each_row = pd.DataFrame(each_row)
-    
     # Get the new data
     name = each_row['Name2'][0]
     name.replace('\r\n', ' ').replace('\t', ' ').replace('\n', ' ').replace('  ', ' ')
@@ -1242,8 +1234,6 @@ def clean_url(url):
 def update_linkedin(each_row, constituent_id):
     
     logging.info('Proceeding to update LinkedIn')
-    
-    each_row = pd.DataFrame(each_row)
     
     # Get the new data
     linkedin = each_row['LinkedIn'][0]
@@ -1373,8 +1363,7 @@ try:
     new_data = find_remaining_data(form_data, data_uploaded).copy()
     
     # Upload data to RE
-    for each_row in new_data.index:
-        each_row = new_data[each_row:]
+        each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
         
         # Get RE ID
         constituent_id = int(each_row.loc[0]['System Record ID'])
