@@ -1378,13 +1378,15 @@ try:
     data_uploaded = load_data('Data Uploaded').copy()
     
     ## Identify the new data which is yet to be uploaded
-    new_data = find_remaining_data(form_data, data_uploaded).copy()
+    new_data = pd.DataFrame(find_remaining_data(form_data, data_uploaded))
     
     # Upload data to RE
+    for index, each_row in new_data.iterrows():
+        
         each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
         
         # Get RE ID
-        constituent_id = int(each_row.loc[0]['System Record ID'])
+        constituent_id = int(each_row['System Record ID'])
         
         logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
         
