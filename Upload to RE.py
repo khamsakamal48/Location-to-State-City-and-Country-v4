@@ -583,7 +583,7 @@ def update_phones(each_row, constituent_id):
         params = {
             'primary': True
         }
-
+        
         patch_request_re(url, params)
         
         # Adding verified tag
@@ -655,9 +655,15 @@ def update_employment(each_row, constituent_id):
     ### Get list of employees in RE
     re_employer_list = re_data['name'].to_list()
     
+    ### Drop NaN values
+    re_employer_list = [item for item in re_employer_list if not(pd.isnull(item)) == True]
+    
     # Get the new data
     employee_details = each_row[['Organization Name', 'Position', 'Start Date', 'End Date']].reset_index(drop=True)
     employee_list = employee_details['Organization Name'].to_list()
+    
+    ### Drop NaN values
+    employee_list = [item for item in employee_list if not(pd.isnull(item)) == True]
     
     # Find Org names that have to be updated
     missing_values = []
@@ -725,7 +731,7 @@ def update_employment(each_row, constituent_id):
         relationship_id = re_data[re_data['name'] == org].iloc[0]['id']
         
         # Check if designation needs an update
-        designation = str(employee_details.loc[0]['Position'])
+        designation = str(employee_details.loc[0]['Position']).replace('nan', '')
         
         re_designation  = str(re_data[re_data['id'] == relationship_id].iloc[0]['position'])
         
@@ -754,9 +760,8 @@ def update_employment(each_row, constituent_id):
         for i in range(10):
             params = del_blank_values_in_json(params.copy())
         
-        logging.info(str(params))
-        
-        patch_request_re(url, params)
+        if params != {'is_primary_business': True}:
+            patch_request_re(url, params)
     
     else:
         
@@ -779,7 +784,7 @@ def update_employment(each_row, constituent_id):
                 'name': str(employee_details.loc[0]['Organization Name'])[:60],
                 'type': 'Organization'
             },
-            'position': str(employee_details.loc[0]['Position'])[:50],
+            'position': str(employee_details.loc[0]['Position']).replace('nan', '')[:50],
             'start': {
                 'd': start_day,
                 'm': start_month,
@@ -825,12 +830,18 @@ def update_address(each_row, constituent_id):
     ### Get list of addresses in RE
     re_address_list = re_data['formatted_address'].to_list()
     
+    ### Drop NaN values
+    re_address_list = [item for item in re_address_list if not(pd.isnull(item)) == True]
+    
     # Get the new data
     address_data = each_row[['Address Lines', 'City', 'State', 'Country', 'Postal Code']].reset_index(drop=True)
     address_data['Address'] = address_data['Address Lines'].astype(str) + ' ' + address_data['City'].astype(str) + ' ' + address_data['State'].astype(str) + ' ' + address_data['Country'].astype(str) + ' ' + address_data['Postal Code'].astype(str)
     address_data = address_data.replace(to_replace=['\r\n', '\t', '\n'], value=', ', regex=True)
     address_data = address_data.replace(to_replace=['  '], value=' ', regex=True)
     address_list = address_data['Address'].to_list()
+    
+    ### Drop NaN values
+    address_list = [item for item in address_list if not(pd.isnull(item)) == True]
     
     # Find Address that have to be updated
     missing_values = []
@@ -880,10 +891,10 @@ def update_address(each_row, constituent_id):
         url = 'https://api.sky.blackbaud.com/constituent/v1/addresses'
         
         params = {
-            'address_lines': str(address_list[0]).replace(', ', ', \r\n'),
-            'city': str(each_row['City'][0]),
-            'state': str(each_row['State'][0]),
-            'country': str(each_row['Country'][0]),
+            'address_lines': str(address_list[0]).replace(', ', ', \r\n').replace('nan', ''),
+            'city': str(each_row['City'][0]).replace('nan', ''),
+            'state': str(each_row['State'][0]).replace('nan', ''),
+            'country': str(each_row['Country'][0]).replace('nan', ''),
             'postal_code': str(each_row['Postal Code'][0]),
             'constituent_id': constituent_id,
             'type': 'Home',
@@ -1368,7 +1379,7 @@ try:
     # Pre-process the data
     logging.info('Pre-processing data')
     # Replace NA, 0 and Other with NaN
-    form_data = form_data.replace(to_replace=[0, 'NA', 'na', 'Other', 'other'], value='')
+    form_data = form_data.replace(to_replace=[0, 'NA', 'na', 'Other', 'other'], value=np.NaN)
     
     # Remove data that's already uploaded
     
