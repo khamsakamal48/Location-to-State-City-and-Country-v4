@@ -756,6 +756,8 @@ def update_employment(each_row, constituent_id):
         for i in range(10):
             params = del_blank_values_in_json(params.copy())
         
+        logging.info(str(params))
+        
         patch_request_re(url, params)
     
     else:
