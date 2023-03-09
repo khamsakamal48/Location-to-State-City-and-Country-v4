@@ -598,7 +598,7 @@ def update_phones(each_row, constituent_id):
             if i == 0:
                 
                 params = {
-                    'number': int(phone),
+                    'number': int(float(str(phone))),
                     'constituent_id': constituent_id,
                     'primary': True,
                     'type': 'Mobile'
@@ -606,7 +606,7 @@ def update_phones(each_row, constituent_id):
             
             else:
                 params = {
-                    'address': int(phone),
+                    'address': int(float(str(phone))),
                     'constituent_id': constituent_id,
                     'type': 'Mobile'
                 }
