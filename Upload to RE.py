@@ -258,11 +258,8 @@ def find_remaining_data(all_df, partial_df):
     
     logging.info('Identifying missing data between two Panda Dataframes')
     
-    # Merge dataframes A and B based on common columns
-    merged_df = pd.merge(all_df, partial_df, how='outer', indicator=True)
-    
-    # Extract rows from A that are not in B into a new dataframe C
-    remaining_data = merged_df.loc[merged_df['_merge'] == 'left_only', all_df.columns]
+    # Concatenate dataframes A and B vertically and drop duplicates
+    remaining_data = pd.concat([all_df, partial_df]).drop_duplicates(keep=False)
     
     return remaining_data
 
