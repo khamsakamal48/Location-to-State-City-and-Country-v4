@@ -905,7 +905,7 @@ def update_address(each_row, constituent_id):
             'city': str(each_row['City'][0]).replace('nan', ''),
             'state': str(each_row['State'][0]).replace('nan', ''),
             'country': str(each_row['Country'][0]).replace('nan', ''),
-            'postal_code': str(each_row['Postal Code'][0]),
+            'postal_code': str(each_row['Postal Code'][0]).replace('nan', ''),
             'constituent_id': constituent_id,
             'type': 'Home',
             'preferred': True
@@ -914,7 +914,7 @@ def update_address(each_row, constituent_id):
         post_request_re(url, params)
         
         ## Update Tags
-        add_tags(source, 'Sync source', str(address_list[0])[:50], constituent_id)
+        add_tags(source, 'Sync source', str(address_list[0]).replace('nan', '')[:50], constituent_id)
 
 def update_education(each_row, constituent_id):
     
