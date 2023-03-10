@@ -773,48 +773,51 @@ def update_employment(each_row, constituent_id):
         
         # Upload missing employment details
         
-        url = 'https://api.sky.blackbaud.com/constituent/v1/relationships'
+        ## Check if the new org is not NaN
+        if str(employee_details.loc[0]['Organization Name']).replace('nan', '') != '':
         
-        ## Check if organisation is a University
-        school_matches = ['school', 'college', 'university', 'institute', 'iit', 'iim']
-        
-        if any(x in str(employee_details.loc[0]['Organization Name']).lower() for x in school_matches):
-            relationship = 'University'
-        
-        else:
-            relationship = 'Employer'
-        
-        params = {
-            'constituent_id': constituent_id,
-            'relation': {
-                'name': str(employee_details.loc[0]['Organization Name'])[:60],
-                'type': 'Organization'
-            },
-            'position': str(employee_details.loc[0]['Position']).replace('nan', '')[:50],
-            'start': {
-                'd': start_day,
-                'm': start_month,
-                'y': start_year
-            },
-            'end': {
-                'd': end_day,
-                'm': end_month,
-                'y': end_year
-            },
-            'type': relationship,
-            'reciprocal_type': 'Employee',
-            'is_primary_business': True
-        }
-        
-        # Delete blank values from JSON
-        for i in range(10):
-            params = del_blank_values_in_json(params.copy())
-        
-        ## Update in RE
-        post_request_re(url, params)
-        
-        ## Update Tags
-        add_tags(source, 'Sync Source', str(employee_details.loc[0]['Organization Name'])[:50], constituent_id)
+            url = 'https://api.sky.blackbaud.com/constituent/v1/relationships'
+            
+            ## Check if organisation is a University
+            school_matches = ['school', 'college', 'university', 'institute', 'iit', 'iim']
+            
+            if any(x in str(employee_details.loc[0]['Organization Name']).lower() for x in school_matches):
+                relationship = 'University'
+            
+            else:
+                relationship = 'Employer'
+            
+            params = {
+                'constituent_id': constituent_id,
+                'relation': {
+                    'name': str(employee_details.loc[0]['Organization Name'])[:60],
+                    'type': 'Organization'
+                },
+                'position': str(employee_details.loc[0]['Position']).replace('nan', '')[:50],
+                'start': {
+                    'd': start_day,
+                    'm': start_month,
+                    'y': start_year
+                },
+                'end': {
+                    'd': end_day,
+                    'm': end_month,
+                    'y': end_year
+                },
+                'type': relationship,
+                'reciprocal_type': 'Employee',
+                'is_primary_business': True
+            }
+            
+            # Delete blank values from JSON
+            for i in range(10):
+                params = del_blank_values_in_json(params.copy())
+            
+            ## Update in RE
+            post_request_re(url, params)
+            
+            ## Update Tags
+            add_tags(source, 'Sync Source', str(employee_details.loc[0]['Organization Name'])[:50], constituent_id)
 
 def update_address(each_row, constituent_id):
     
