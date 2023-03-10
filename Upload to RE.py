@@ -598,7 +598,7 @@ def update_phones(each_row, constituent_id):
         i = 0
         for phone in missing_values:
             
-            phones = re.sub("[^0-9]", "",(each_phone['number']))
+            phone = re.sub("[^0-9]", "", phone)
             
             if i == 0:
                 
