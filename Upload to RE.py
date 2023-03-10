@@ -390,11 +390,17 @@ def add_tags(source, tag, update, constituent_id):
 def update_emails(each_row, constituent_id):
     
     logging.info('Proceeding to update Email')
-
+    
+    # Convert all values to lower-case
+    each_row = each_row.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+    
     # Get email address list
     email_list = each_row[['Email 1', 'Email 2', 'Email 3']].T
     email_list.columns = ['Email']
     email_list = email_list[['Email']].reset_index(drop=True).dropna()
+    
+    # Convert all values to lower-case
+    email_list = email_list.applymap(lambda x: x.lower() if isinstance(x, str) else x)
     
     # Get Email address present in RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/emailaddresses'
@@ -405,9 +411,15 @@ def update_emails(each_row, constituent_id):
     # Load to Dataframe
     re_data = api_to_df(re_api_response).copy()
     
+    # Convert all values to lower-case
+    re_data = re_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+    
     # Get emails in RE
     re_email = re_data[['address']]
     re_email.columns = ['Email']
+    
+    # Convert all values to lower-case
+    re_email = re_email.applymap(lambda x: x.lower() if isinstance(x, str) else x)
     
     # Find missing Email Addresses
     merged_df = pd.merge(email_list, re_email, how='outer', indicator=True)
@@ -473,7 +485,7 @@ def update_emails(each_row, constituent_id):
             
             ## Upload Missing Email Address
             i = 0
-            for index, row in missing_values.iterrows:
+            for index, row in missing_values.iterrows():
                 row = pd.DataFrame(row).T.reset_index(drop=True)
                 
                 email = str(row['Email'][0])
@@ -552,7 +564,7 @@ def update_phones(each_row, constituent_id):
     for each_phone in phone_list:
         try:
             likely_phone, score = process.extractOne(each_phone, re_data)
-            if score < 80:
+            if score <= 80:
                 missing_values.append(each_phone)
         except:
             missing_values.append(each_phone)
@@ -569,12 +581,15 @@ def update_phones(each_row, constituent_id):
     # Check if there's any new phone number to add and that the existing phone number (to be updated) is not empty
     if missing_values == [] and not pd.isna(each_row.loc[0]['Phone number 1']):
         
+        logging.info(re_data_unformatted)
         # Mark existing phone number as primary
         for each_phone in re_data_unformatted:
             try:
-                likely_phone, score = process.extractOne(each_phone, phone_list)
-                if score > 80:
+                likely_phone, score = process.extractOne(each_phone, re_data)
+                if score >= 80:
                     phone = each_phone
+                    logging.info(each_phone)
+                    logging.info(score)
                     break
             except:
                 pass
@@ -592,7 +607,7 @@ def update_phones(each_row, constituent_id):
         phone = re.sub("[^0-9]", "", phone)
         
         # Adding verified tag
-        add_tags(int(phone), 'Verified Phone', source, constituent_id)
+        add_tags(phone, 'Verified Phone', source, constituent_id)
     
     else:
     
@@ -600,12 +615,15 @@ def update_phones(each_row, constituent_id):
         i = 0
         for phone in missing_values:
             
-            phone = re.sub("[^0-9]", "", phone)
+            try:
+                phone = int(float(str(phone)))
+            except:
+                phone = re.sub("[^0-9]", "", phone)
             
             if i == 0:
 
                 params = {
-                    'number': int(phone),
+                    'number': phone,
                     'constituent_id': constituent_id,
                     'primary': True,
                     'type': 'Mobile'
@@ -613,7 +631,7 @@ def update_phones(each_row, constituent_id):
             
             else:
                 params = {
-                    'address': int(phone),
+                    'address': phone,
                     'constituent_id': constituent_id,
                     'type': 'Mobile'
                 }
@@ -627,10 +645,10 @@ def update_phones(each_row, constituent_id):
             
             # Upload Tags
             ## Update Tags
-            add_tags(source, 'Sync source', int(float(str(phone))), constituent_id)
+            add_tags(source, 'Sync source', phone, constituent_id)
             
             ## Verified Tags
-            add_tags(int(phone), 'Verified Phone', source, constituent_id)
+            add_tags(phone, 'Verified Phone', source, constituent_id)
 
 def update_employment(each_row, constituent_id):
     
@@ -666,7 +684,7 @@ def update_employment(each_row, constituent_id):
     re_employer_list = [item for item in re_employer_list if not(pd.isnull(item)) == True]
     
     # Get the new data
-    employee_details = each_row[['Organization Name', 'Position', 'Start Date', 'End Date']].reset_index(drop=True)
+    employee_details = each_row[['Organization Name', 'Position', 'Start Date', 'End Date']].reset_index(drop=True).fillna('').replace('NA', '').replace('na', '').replace('Other', '').replace('other', '').replace(0, '')
     employee_list = employee_details['Organization Name'].to_list()
     
     ### Drop NaN values
@@ -677,7 +695,7 @@ def update_employment(each_row, constituent_id):
     for each_org in employee_list:
         try:
             likely_org, score = process.extractOne(each_org, re_employer_list)
-            if score < 90:
+            if score <= 90:
                 missing_values.append(each_org)
         except:
             missing_values.append(each_org)
@@ -729,16 +747,19 @@ def update_employment(each_row, constituent_id):
         for each_org in re_employer_list:
             try:
                 likely_org, score = process.extractOne(each_org, employee_list)
-                if score > 90:
+                if score >= 90:
                     org = each_org
                     break
             except:
                 pass
         
+        logging.info('I am here')
+        logging.info(each_org)
+        
         relationship_id = re_data[re_data['name'] == org]['id'].reset_index(drop=True)[0]
         
         # Check if designation needs an update
-        designation = str(employee_details.loc[0]['Position']).replace('nan', '')
+        designation = str(employee_details.loc[0]['Position'])
         
         re_designation  = str(re_data[re_data['id'] == relationship_id].iloc[0]['position'])
         
@@ -775,9 +796,15 @@ def update_employment(each_row, constituent_id):
         # Upload missing employment details
         
         ## Check if the new org is not NaN
-        if str(employee_details.loc[0]['Organization Name']).replace('nan', '') != '':
+        empty_values = ['na', 'other']
+        if not any(x in str(employee_details.loc[0]['Organization Name']).lower() for x in empty_values) and len(str(employee_details.loc[0]['Organization Name'])) != 0 and str(employee_details.loc[0]['Organization Name']) != 0:
+        
+        # if str(employee_details.loc[0]['Organization Name']) != '' or str(employee_details.loc[0]['Organization Name']) != 'NA' or str(employee_details.loc[0]['Organization Name']) != 'na' or str(employee_details.loc[0]['Organization Name']) != 'Other' or str(employee_details.loc[0]['Organization Name']) != 0:
         
             url = 'https://api.sky.blackbaud.com/constituent/v1/relationships'
+            
+            logging.info('I am here')
+            logging.info(len(str(employee_details.loc[0]['Organization Name'])))
             
             ## Check if organisation is a University
             school_matches = ['school', 'college', 'university', 'institute', 'iit', 'iim']
@@ -788,13 +815,19 @@ def update_employment(each_row, constituent_id):
             else:
                 relationship = 'Employer'
             
+            # Check if position is NA
+            if any(x in str(employee_details.loc[0]['Position']).lower() for x in empty_values) or str(employee_details.loc[0]['Position']) == 0 or len(str(employee_details.loc[0]['Position']).strip()) == 0:
+                position = ''
+            else:
+                position = str(employee_details.loc[0]['Position'])[:50]
+            
             params = {
                 'constituent_id': constituent_id,
                 'relation': {
                     'name': str(employee_details.loc[0]['Organization Name'])[:60],
                     'type': 'Organization'
                 },
-                'position': str(employee_details.loc[0]['Position']).replace('nan', '')[:50],
+                'position': position,
                 'start': {
                     'd': start_day,
                     'm': start_month,
@@ -844,7 +877,8 @@ def update_address(each_row, constituent_id):
     re_address_list = [item for item in re_address_list if not(pd.isnull(item)) == True]
     
     # Get the new data
-    address_data = each_row[['Address Lines', 'City', 'State', 'Country', 'Postal Code']].reset_index(drop=True)
+    address_data = pd.DataFrame(each_row[['Address Lines', 'City', 'State', 'Country', 'Postal Code']])
+    address_data = address_data.reset_index(drop=True).fillna('').replace('NA', '').replace('Other', '').replace('na', '').replace('other', '').replace('0', '').replace('0.0', '')
     address_data['Address'] = address_data['Address Lines'].astype(str) + ' ' + address_data['City'].astype(str) + ' ' + address_data['State'].astype(str) + ' ' + address_data['Country'].astype(str) + ' ' + address_data['Postal Code'].astype(str)
     address_data = address_data.replace(to_replace=['\r\n', '\t', '\n'], value=', ', regex=True)
     address_data = address_data.replace(to_replace=['  '], value=' ', regex=True)
@@ -855,13 +889,14 @@ def update_address(each_row, constituent_id):
     
     # Find Address that have to be updated
     missing_values = []
-    for each_address in address_list:
-        try:
-            likely_org, score = process.extractOne(each_address, re_address_list)
-            if score < 90:
+    if address_list != []:
+        for each_address in address_list:
+            try:
+                likely_org, score = process.extractOne(each_address, re_address_list)
+                if score <= 90:
+                    missing_values.append(each_address)
+            except:
                 missing_values.append(each_address)
-        except:
-            missing_values.append(each_address)
     
     # Making sure that there are no duplicates in the missing list
     if missing_values != []:
@@ -878,7 +913,7 @@ def update_address(each_row, constituent_id):
         for each_address in re_address_list:
             try:
                 likely_org, score = process.extractOne(each_address, address_list)
-                if score > 90:
+                if score >= 90:
                     address = each_address
                     break
             except:
@@ -900,21 +935,47 @@ def update_address(each_row, constituent_id):
         # Upload missing address details
         url = 'https://api.sky.blackbaud.com/constituent/v1/addresses'
         
-        params = {
-            'address_lines': str(address_list[0]).replace(', ', ', \r\n').replace('nan', ''),
-            'city': str(each_row['City'][0]).replace('nan', ''),
-            'state': str(each_row['State'][0]).replace('nan', ''),
-            'country': str(each_row['Country'][0]).replace('nan', ''),
-            'postal_code': str(each_row['Postal Code'][0]).replace('nan', ''),
-            'constituent_id': constituent_id,
-            'type': 'Home',
-            'preferred': True
-        }
+        each_row.fillna('', inplace=True)
         
-        post_request_re(url, params)
+        address_lines = str(address_list[0]).replace(', ', ', \r\n').replace('  ', ' ').replace('.0', '').strip()[:150]
+        city = str(each_row['City'][0])
+        state = str(each_row['State'][0])
+        country = str(each_row['Country'][0])
+        try:
+            postal_code = int(str(each_row['Postal Code'][0]).replace('.0',''))
+        except:
+            postal_code = str(each_row['Postal Code'][0]).replace('.0','')
+        if postal_code == 0:
+            postal_code = ''
         
-        ## Update Tags
-        add_tags(source, 'Sync source', str(address_list[0]).replace('nan', '')[:50], constituent_id)
+        
+        # Check if there's any address to add
+        if address_lines != '' and city != '' and state != '' and country != '' and postal_code != '':
+            
+            # Ignore state for below countries
+            if country == 'Mauritius':
+                state = ''
+        
+            params = {
+                'address_lines': address_lines,
+                'city': city,
+                'state': state,
+                'county': state,
+                'country': country,
+                'postal_code': postal_code,
+                'constituent_id': constituent_id,
+                'type': 'Home',
+                'preferred': True
+            }
+            
+            # Delete blank values from JSON
+            for i in range(10):
+                params = del_blank_values_in_json(params.copy())
+            
+            post_request_re(url, params)
+            
+            ## Update Tags
+            add_tags(source, 'Sync source', str(address_list[0]).replace('.0','').replace(' 0', '')[:50], constituent_id)
 
 def update_education(each_row, constituent_id):
     
@@ -1390,6 +1451,24 @@ try:
     # Replace NA, 0 and Other with NaN
     form_data = form_data.replace(to_replace=[0, 'NA', 'na', 'Other', 'other'], value=np.NaN)
     
+    # Fixing the class of column
+    ## 1. Replace 'Other' and 'NA' values with NaN
+    form_data['Class of'] = pd.to_numeric(form_data['Class of'], errors='coerce')
+    ## 2. Replace NaN values with a default value, such as -1 or 0
+    form_data['Class of'].fillna(0, inplace=True)
+    ## 3. Convert the 'class_of' column to 'float'
+    form_data['Class of'] = form_data['Class of'].astype(float)
+    ## 4. Convert the 'float' datatype to the 'int' datatype
+    form_data['Class of'] = form_data['Class of'].astype(int)
+    
+    # Fixing the Postal code column
+    ## 1. Replace 'Other' and 'NA' values with NaN
+    form_data['Postal Code'] = pd.to_numeric(form_data['Postal Code'], errors='coerce')
+    ## 2. Replace NaN values with a default value, such as -1 or 0
+    form_data['Postal Code'].fillna(0, inplace=True)
+    ## 3. Convert the 'class_of' column to 'float'
+    form_data['Postal Code'] = form_data['Postal Code'].astype(float)
+    
     # Remove data that's already uploaded
     
     ## Load data that's uploaded
@@ -1402,6 +1481,7 @@ try:
     for index, each_row in new_data.iterrows():
         
         each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
+        each_row_bak = each_row.copy()
         
         # Get RE ID
         constituent_id = int(each_row['System Record ID'])
@@ -1431,12 +1511,14 @@ try:
         
         # Create database of file that's aready uploaded
         logging.info('Updating Database of synced records')
-        data_uploaded = pd.concat([data_uploaded, each_row], axis=0,  ignore_index=True)
+        data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
         data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
         
         # Sleep for 60 seconds
-        logging.info('Sleeping for 60 seconds')
-        time.sleep(60)
+        # logging.info('Sleeping for 60 seconds')
+        # time.sleep(60)
+        
+        break
     
     # Check for errors
     with open(f'Logs/{process_name}.log') as log:
