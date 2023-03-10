@@ -364,10 +364,7 @@ def api_to_df(response):
         try:
             api_response = pd.json_normalize(response)
         except:
-            try:
-                api_response = pd.json_normalize(response['value'], errors='ignore')
-            except:
-                api_response = pd.json_normalize(response, errors='ignore')
+            api_response = pd.json_normalize(response, 'value')
     
     # Load to a dataframe
     df = pd.DataFrame(data=api_response)
@@ -427,7 +424,7 @@ def update_emails(each_row, constituent_id):
         ## Mark existing email as primary
         email = each_row['Email 1'][0]
         
-        email_address_id = int(re_data[re_data['address'] == email]['id'])
+        email_address_id = int(re_data[re_data['address'] == email]['id'].reset_index(drop=True)[0])
         
         url = f'https://api.sky.blackbaud.com/constituent/v1/emailaddresses/{email_address_id}'
         
