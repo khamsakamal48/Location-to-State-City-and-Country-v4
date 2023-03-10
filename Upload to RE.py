@@ -1440,7 +1440,7 @@ try:
     set_api_request_strategy()
     
     # # Get Excel file from Microsoft Form
-    # download_excel(FORM_URL)
+    download_excel(FORM_URL)
     
     # Load file to a Dataframe
     form_data = load_data('Form Responses.xlsx').copy()
@@ -1515,10 +1515,8 @@ try:
         data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
         
         # Sleep for 60 seconds
-        # logging.info('Sleeping for 60 seconds')
-        # time.sleep(60)
-        
-        break
+        logging.info('Sleeping for 60 seconds')
+        time.sleep(60)
     
     # Check for errors
     with open(f'Logs/{process_name}.log') as log:
