@@ -589,8 +589,10 @@ def update_phones(each_row, constituent_id):
         
         patch_request_re(url, params)
         
+        phone = re.sub("[^0-9]", "", phone)
+        
         # Adding verified tag
-        add_tags(int(float(str(phone))), 'Verified Phone', source, constituent_id)
+        add_tags(int(phone), 'Verified Phone', source, constituent_id)
     
     else:
     
@@ -601,9 +603,9 @@ def update_phones(each_row, constituent_id):
             phone = re.sub("[^0-9]", "", phone)
             
             if i == 0:
-                
+
                 params = {
-                    'number': int(float(str(phone).replace(' ', ''))),
+                    'number': int(phone),
                     'constituent_id': constituent_id,
                     'primary': True,
                     'type': 'Mobile'
@@ -611,7 +613,7 @@ def update_phones(each_row, constituent_id):
             
             else:
                 params = {
-                    'address': int(float(str(phone).replace(' ', ''))),
+                    'address': int(phone),
                     'constituent_id': constituent_id,
                     'type': 'Mobile'
                 }
@@ -628,7 +630,7 @@ def update_phones(each_row, constituent_id):
             add_tags(source, 'Sync source', int(float(str(phone))), constituent_id)
             
             ## Verified Tags
-            add_tags(int(float(str(phone))), 'Verified Phone', source, constituent_id)
+            add_tags(int(phone), 'Verified Phone', source, constituent_id)
 
 def update_employment(each_row, constituent_id):
     
@@ -933,8 +935,7 @@ def update_education(each_row, constituent_id):
     
     # Load to a dataframe
     re_data = api_to_df(re_api_response).copy()
-    re_data = re_data[re_data['school'] == 'Indian Institute of Technology Bombay']
-
+    re_data = re_data[re_data['school'] == 'Indian Institute of Technology Bombay'].reset_index(drop=True)
     
     # Check if number of educations in RE
     if len(re_data) == 1:
@@ -1377,8 +1378,8 @@ try:
     # Set API Request strategy
     set_api_request_strategy()
     
-    # Get Excel file from Microsoft Form
-    download_excel(FORM_URL)
+    # # Get Excel file from Microsoft Form
+    # download_excel(FORM_URL)
     
     # Load file to a Dataframe
     form_data = load_data('Form Responses.xlsx').copy()
