@@ -579,7 +579,7 @@ def update_phones(each_row, constituent_id):
             except:
                 pass
         
-        phone_id = int(re_data_complete[re_data_complete['number'] == phone].iloc[0]['id'])
+        phone_id = int(re_data_complete[re_data_complete['number'] == phone]['id'].reset_index(drop=True)[0])
         
         url = f'https://api.sky.blackbaud.com/constituent/v1/phones/{phone_id}'
         
@@ -731,7 +731,7 @@ def update_employment(each_row, constituent_id):
             except:
                 pass
         
-        relationship_id = re_data[re_data['name'] == org].iloc[0]['id']
+        relationship_id = re_data[re_data['name'] == org]['id'].reset_index(drop=True)[0]
         
         # Check if designation needs an update
         designation = str(employee_details.loc[0]['Position']).replace('nan', '')
@@ -880,7 +880,7 @@ def update_address(each_row, constituent_id):
             except:
                 pass
         
-        address_id = re_data[re_data['formatted_address'] == address].iloc[0]['id']
+        address_id = re_data[re_data['formatted_address'] == address]['id'].reset_index(drop=True)[0]
         
         # Update in RE
         url = f'https://api.sky.blackbaud.com/constituent/v1/addresses/{address_id}'
