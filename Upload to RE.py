@@ -427,8 +427,19 @@ def update_emails(each_row, constituent_id):
     re_data = re_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
     
     # Get emails in RE
-    re_email = re_data[['address']]
-    re_email.columns = ['Email']
+    try:
+        re_email = re_data[['address']]
+        re_email.columns = ['Email']
+    
+    except:
+        # When there are no email addresses in RE
+        columns = ['Email']
+        
+        ## Create a dictionary with column names as keys and NaN as values for a single row
+        re_email = {column: [np.nan] for column in columns}
+        
+        ## Create a DataFrame using the dictionary
+        re_email = pd.DataFrame(re_email)
     
     # Convert all values to lower-case
     re_email = re_email.applymap(lambda x: x.lower() if isinstance(x, str) else x)
@@ -1525,6 +1536,10 @@ try:
         logging.info('Updating Database of synced records')
         data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
         data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
+        
+        # Sleep for 60 seconds
+        logging.info('Sleeping for 60 seconds')
+        time.sleep(60)
     
     # Check for errors
     with open(f'Logs/{process_name}.log') as log:
