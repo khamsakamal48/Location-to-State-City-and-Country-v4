@@ -1164,6 +1164,9 @@ def update_education(each_row, constituent_id):
     except:
         # When no education exists in RE
         
+        # Degree
+        degree_df = pd.read_parquet('Databases/Degrees')
+        
         params = {
                     'constituent_id': constituent_id,
                     'school': 'Indian Institute of Technology Bombay',
