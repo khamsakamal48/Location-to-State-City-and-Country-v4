@@ -1185,7 +1185,8 @@ def update_education(each_row, constituent_id):
                         education_department
                     ],
                     'social_organization': education_hostel,
-                    'status': 'Graduated'
+                    'status': 'Graduated',
+                    'primary': True
                 }
         
         # Delete blank values from JSON
