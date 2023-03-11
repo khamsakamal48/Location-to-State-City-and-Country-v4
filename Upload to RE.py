@@ -1167,6 +1167,9 @@ def update_education(each_row, constituent_id):
         # Degree
         degree_df = pd.read_parquet('Databases/Degrees')
         
+        # Get Data source (Limiting to 50 characters)
+        source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Education"[:50]
+        
         params = {
                     'constituent_id': constituent_id,
                     'school': 'Indian Institute of Technology Bombay',
