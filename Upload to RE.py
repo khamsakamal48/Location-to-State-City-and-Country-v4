@@ -1341,7 +1341,7 @@ def update_name(each_row, constituent_id):
                 'first': str(first_name)[:50],
                 'middle': str(middle_name)[:50],
                 'last': str(last_name)[:50],
-                'former_name': str(str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:100]
+                'former_name': str(str(re_title)+ ' ' + str(re_f_name) + ' ' + str(re_m_name) + ' ' + str(re_l_name)).replace('  ', ' ')[:100]
             }
             
             # Delete blank values from JSON
