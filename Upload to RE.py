@@ -969,7 +969,7 @@ def update_address(each_row, constituent_id):
         if address_lines != '' and city != '' and state != '' and country != '' and postal_code != '':
             
             # Ignore state for below countries
-            if country == 'Mauritius':
+            if country == 'Mauritius' or country == 'Switzerland':
                 state = ''
         
             params = {
