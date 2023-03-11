@@ -293,6 +293,10 @@ def get_request_re(url, params):
     logging.info(re_api_response)
     
     check_errors(re_api_response)
+    
+    # Sleep for 5 seconds
+    logging.info('Sleeping for 5 seconds')
+    time.sleep(5)
 
 def post_request_re(url, params):
     
@@ -315,6 +319,10 @@ def post_request_re(url, params):
     logging.info(re_api_response)
     
     check_errors(re_api_response)
+    
+    # Sleep for 5 seconds
+    logging.info('Sleeping for 5 seconds')
+    time.sleep(5)
 
 def patch_request_re(url, params):
     
@@ -337,6 +345,10 @@ def patch_request_re(url, params):
     logging.info(re_api_response)
     
     check_errors(re_api_response)
+    
+    # Sleep for 5 seconds
+    logging.info('Sleeping for 5 seconds')
+    time.sleep(5)
 
 def del_blank_values_in_json(d):
     """
@@ -1513,10 +1525,6 @@ try:
         logging.info('Updating Database of synced records')
         data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
         data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
-        
-        # Sleep for 60 seconds
-        logging.info('Sleeping for 60 seconds')
-        time.sleep(60)
     
     # Check for errors
     with open(f'Logs/{process_name}.log') as log:
