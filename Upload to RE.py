@@ -1194,7 +1194,7 @@ def update_education(each_row, constituent_id):
             
         url = 'https://api.sky.blackbaud.com/constituent/v1/educations'
         
-        patch_request_re(url, params)
+        post_request_re(url, params)
         
         # Add Tags
         add_tags(source, 'Sync source', str(params)[:50], constituent_id)
