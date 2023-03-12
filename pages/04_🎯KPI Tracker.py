@@ -18,7 +18,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the Parquet file into a Pandas dataframe
-# @st.cache_data
+@st.cache_data
 def get_data():
     data = pd.read_parquet('Databases/Custom Fields')
     return data
