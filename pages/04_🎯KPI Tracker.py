@@ -120,14 +120,14 @@ col2.metric("Phone", verified_phone)
 # Combine verified_emails and verified_phone into a single dataframe
 # Verified Emails
 # Getting the count for metrics
-verified_emails = verified_contacts[verified_contacts['category'] == 'Verified Email']
+verified_emails = verified_contacts[verified_contacts['category'] == 'Verified Email'].reset_index(drop=True)
 verified_emails = verified_emails.resample('M', on='date_added').count().reset_index()
 verified_emails['date_added'] = verified_emails['date_added'].dt.strftime('%b\'%y')
 verified_emails.rename(columns={'parent_id': 'Emails'}, inplace=True)
 
 # Verified Phones
 # Getting the count for metrics
-verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Phone']
+verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Phone'].reset_index(drop=True)
 verified_phone = verified_phone.resample('M', on='date_added').count().reset_index()
 verified_phone['date_added'] = verified_phone['date_added'].dt.strftime('%b\'%y')
 verified_phone.rename(columns={'parent_id': 'Phones'}, inplace=True)
