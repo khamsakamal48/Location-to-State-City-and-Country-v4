@@ -21,6 +21,8 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 @st.cache_data
 def get_data():
     data = pd.read_parquet('Databases/Custom Fields')
+    # Reset the index so that the date_added column becomes a regular column
+    data = data.reset_index()
     return data
 
 data = get_data()
@@ -121,7 +123,6 @@ col2.metric("Phone", verified_phone)
 # Verified Emails
 # Getting the count for metrics
 verified_emails = verified_contacts[verified_contacts['category'] == 'Verified Email']
-verified_emails['month_added'] = verified_emails['date_added'].dt.to_period('M')
 verified_emails = verified_emails.resample('M', on='date_added').count().reset_index()
 verified_emails['date_added'] = verified_emails['date_added'].dt.strftime('%b\'%y')
 verified_emails.rename(columns={'parent_id': 'Emails'}, inplace=True)
@@ -129,7 +130,6 @@ verified_emails.rename(columns={'parent_id': 'Emails'}, inplace=True)
 # Verified Phones
 # Getting the count for metrics
 verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Phone']
-verified_phone['month_added'] = verified_phone['date_added'].dt.to_period('M')
 verified_phone = verified_phone.resample('M', on='date_added').count().reset_index()
 verified_phone['date_added'] = verified_phone['date_added'].dt.strftime('%b\'%y')
 verified_phone.rename(columns={'parent_id': 'Phones'}, inplace=True)
@@ -174,17 +174,6 @@ st.markdown('###')
 st.markdown('##### Monthly Trend')
 line_chart_data = updates.groupby([pd.Grouper(key='date_added', freq='M'), 'update_type']).size().reset_index(name='count')
 line_chart_data['date_added'] = line_chart_data['date_added'].dt.strftime('%b\'%y')
-# line_chart_data = line_chart_data.groupby([pd.Grouper(key='date_added', freq='M'), 'update_type']).sum().reset_index()
-# line_chart_data = line_chart_data.sort_values(by='date_added')
-
-# # Extract the month and year from the date_column
-# line_chart_data['month'] = pd.DatetimeIndex(line_chart_data['date_added']).month
-# line_chart_data['year'] = pd.DatetimeIndex(line_chart_data['date_added']).year
-
-# # Sort the DataFrame by month and year
-# line_chart_data = line_chart_data.sort_values(by=['year', 'month'])
-
-# line_chart_data['date_added'] = line_chart_data['date_added'].dt.strftime('%b\'%y')
 
 line_chart = px.line(line_chart_data, x='date_added', y='count', color='update_type', width=None, line_shape='spline')
 line_chart.update_traces(mode='lines+markers', line_width=4, marker_size=11)
