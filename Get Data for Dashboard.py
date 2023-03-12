@@ -81,7 +81,7 @@ def get_env_variables():
     
     logging.info('Setting Environment variables')
     
-    global RE_API_KEY, MAIL_USERN, MAIL_PASSWORD, IMAP_URL, IMAP_PORT, SMTP_URL, SMTP_PORT, SEND_TO, FORM_URL
+    global RE_API_KEY, MAIL_USERN, MAIL_PASSWORD, IMAP_URL, IMAP_PORT, SMTP_URL, SMTP_PORT, SEND_TO
 
     load_dotenv()
 
@@ -93,7 +93,6 @@ def get_env_variables():
     SMTP_URL = os.getenv('SMTP_URL')
     SMTP_PORT = os.getenv('SMTP_PORT')
     SEND_TO  = os.getenv('SEND_TO')
-    FORM_URL = os.getenv('FORM_URL')
 
 def send_error_emails(subject):
     logging.info('Sending email for an error')
@@ -222,7 +221,7 @@ def check_errors(re_api_response):
     
     logging.info('Checking for exceptions')
     
-    error_keywords = ['error', 'failed', 'invalid', 'unauthorized', 'bad request', 'forbidden', 'not found']
+    error_keywords = ['failed', 'invalid', 'unauthorized', 'bad request', 'forbidden', 'not found']
     
     for keyword in error_keywords:
         if keyword in str(re_api_response).lower():
@@ -247,7 +246,7 @@ def get_request_re(url, params):
     
     logging.info(re_api_response)
     
-    check_errors(re_api_response)
+    # check_errors(re_api_response)
 
 def post_request_re(url, params):
     
@@ -311,9 +310,173 @@ def api_to_df(response):
     
     return df
 
+def pagination_api_request(url, params):
+    
+    # Pagination request to retreive list
+    while url:
+        # Blackbaud API GET request
+        get_request_re(url, params)
+        
+        # Incremental File name
+        i = 1
+        while os.path.exists(f'API_Response_RE_{process_name}_{i}.json'):
+            i += 1
+            
+        with open(f'API_Response_RE_{process_name}_{i}.json', 'w') as list_output:
+            json.dump(re_api_response, list_output,ensure_ascii=False, sort_keys=True, indent=4)
+        
+        # Check if a variable is present in file
+        with open(f'API_Response_RE_{process_name}_{i}.json') as list_output_last:
+            
+            if 'next_link' in list_output_last.read():
+                url = re_api_response['next_link']
+                
+            else:
+                break
+
+def load_from_json_to_parquet():
+    
+    logging.info('Loading from JSON to Parquet file')
+    
+    # Get a list of all the file paths that ends with wildcard from in specified directory
+    fileList = glob.glob('API_Response_RE_*.json')
+    
+    for each_file in fileList:
+        
+        # Open Each JSON File
+        with open(each_file, 'r') as json_file:
+            
+            # Load JSON File
+            json_content = json.load(json_file)
+            
+            # Convert non-string values to strings
+            json_content = convert_to_strings(json_content)
+            
+            # Load from JSON to pandas
+            reff = pd.json_normalize(json_content['value'])
+            
+            # Load to a dataframe
+            df_ = pd.DataFrame(data=reff)
+            
+            try:
+                # Append/Concat datframes
+                df = pd.concat([df, df_])
+                
+            except:
+                df = df_.copy()
+                
+    # export from dataframe to parquet
+    df.to_parquet('Databases/Custom Fields', index=False)
+
+def convert_to_strings(obj):
+    """
+    Recursively convert non-string values to strings in a dictionary
+    """
+    if isinstance(obj, dict):
+        return {k: convert_to_strings(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_strings(item) for item in obj]
+    else:
+        return str(obj)
+
+def get_custom_fields():
+    
+    url = 'https://api.sky.blackbaud.com/constituent/v1/constituents/customfields?limit=5000'
+    params = {}
+    
+    pagination_api_request(url, params)
+    
+    # Load to Dataframe
+    load_from_json_to_parquet()
+
+def data_pre_processing():
+    
+    data = pd.read_parquet('Databases/Custom Fields')
+    
+    # Convert to Datetime format
+    data[['date_added', 'date_modified']] = data[['date_added', 'date_modified']].apply(pd.to_datetime, utc=True)
+    
+    # Adding verified sources
+    data['verified_source'] = data[['category', 'comment']].apply(lambda x: verified_sources(*x), axis = 1)
+    
+    # Adding sync sources
+    data[['sync_source', 'update_type']] = data[['value']].apply(lambda x: pd.Series(sync_source(x[0])), axis=1)
+    
+    # export from dataframe to parquet
+    data.to_parquet('Databases/Custom Fields', index=False)
+
+def verified_sources(category, comment):
+    
+    if 'verified' in str(category).lower():
+        
+        if comment == 'verified using RE appeal data':
+            output = 'RE Email Engagement - Open rate'
+        
+        else:
+            try:
+                output = str(comment).split('-')[0].strip().title()
+            except:
+                output = str(comment).strip().title()
+    else:
+        output = np.NaN
+    
+    return output
+
+def sync_source(source):
+    
+    to_check = ['- manually |', '- manual |', '- auto |', '- automatically |']
+    
+    if any(string in str(source).lower() for string in to_check):
+        try:
+            sync_source = str(source).split('-')[0].strip()
+        except:
+            sync_source = str(source).strip()
+        try:
+            update_type = str(source).split('|')[1].strip().title() 
+        except:
+            update_type = str(source).strip().title()
+    
+    else:
+        sync_source = np.NaN
+        update_type = np.NaN
+    
+    if update_type == 'Email Address' or update_type == 'Primary Email Address':
+        update_type = 'Email'
+    elif update_type == 'Phone Numbers' or update_type == 'Phone Number':
+        update_type = 'Phone'
+    elif update_type == 'Linkedin':
+        update_type = 'Online Presence'
+    elif update_type == 'Gender' or update_type == 'Gender & Title' or update_type == 'Pan Card' or update_type == 'Name':
+        update_type = 'Bio Details'
+    elif update_type == 'Employment - Org. Name' or update_type == 'Employment - Position':
+        update_type = 'Employment'
+    elif update_type == 'Address':
+        update_type = 'Location'
+    
+    return sync_source, update_type
+
 try:
     
+    # Set current directory
+    set_current_directory()
     
+    # Start Logging for Debugging
+    start_logging()
+    
+    # Retrieve contents from .env file
+    get_env_variables()
+    
+    # Housekeeping
+    housekeeping()
+    
+    # Set API Request strategy
+    set_api_request_strategy()
+    
+    # Get Custom fields data of all constituent
+    get_custom_fields()
+    
+    # Data Pre-processing
+    data_pre_processing()
     
     # Check for errors
     with open(f'Logs/{process_name}.log') as log:
@@ -324,7 +487,7 @@ except Exception as Argument:
     
     logging.error(Argument)
     
-    send_error_emails('Error while downloading data from RE for Dashboard | Database Update Form-Model')
+    # send_error_emails('Error while downloading data from RE for Dashboard | Database Update Form-Model')
 
 finally:
     
