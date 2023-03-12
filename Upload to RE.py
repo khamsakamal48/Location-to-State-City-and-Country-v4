@@ -636,35 +636,37 @@ def update_phones(each_row, constituent_id):
             except:
                 phone = re.sub("[^0-9]", "", phone)
             
-            if i == 0:
+            if len(phone) != 0:
+            
+                if i == 0:
 
-                params = {
-                    'number': phone,
-                    'constituent_id': constituent_id,
-                    'primary': True,
-                    'type': 'Mobile'
-                }
-            
-            else:
-                params = {
-                    'address': phone,
-                    'constituent_id': constituent_id,
-                    'type': 'Mobile'
-                }
-            
-            url = 'https://api.sky.blackbaud.com/constituent/v1/phones'
-            
-            # Upload to RE
-            post_request_re(url, params)
-            
-            i += 1
-            
-            # Upload Tags
-            ## Update Tags
-            add_tags(source, 'Sync source', phone, constituent_id)
-            
-            ## Verified Tags
-            add_tags(phone, 'Verified Phone', source, constituent_id)
+                    params = {
+                        'number': phone,
+                        'constituent_id': constituent_id,
+                        'primary': True,
+                        'type': 'Mobile'
+                    }
+                
+                else:
+                    params = {
+                        'address': phone,
+                        'constituent_id': constituent_id,
+                        'type': 'Mobile'
+                    }
+                
+                url = 'https://api.sky.blackbaud.com/constituent/v1/phones'
+                
+                # Upload to RE
+                post_request_re(url, params)
+                
+                i += 1
+                
+                # Upload Tags
+                ## Update Tags
+                add_tags(source, 'Sync source', phone, constituent_id)
+                
+                ## Verified Tags
+                add_tags(phone, 'Verified Phone', source, constituent_id)
 
 def update_employment(each_row, constituent_id):
     
