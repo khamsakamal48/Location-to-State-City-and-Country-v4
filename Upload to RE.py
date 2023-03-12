@@ -639,7 +639,7 @@ def update_phones(each_row, constituent_id):
             if len(phone) != 0:
             
                 if i == 0:
-
+                    
                     params = {
                         'number': phone,
                         'constituent_id': constituent_id,
@@ -649,7 +649,7 @@ def update_phones(each_row, constituent_id):
                 
                 else:
                     params = {
-                        'address': phone,
+                        'number': phone,
                         'constituent_id': constituent_id,
                         'type': 'Mobile'
                     }
