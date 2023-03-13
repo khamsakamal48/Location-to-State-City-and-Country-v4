@@ -18,10 +18,10 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the Parquet file into a Pandas dataframe
-@st.cache_data
+# @st.cache_data
 def get_data():
     data = pd.read_parquet('Databases/Custom Fields')
-    # Reset the index so that the date_added column becomes a regular column
+    # Reset the index so that the date column becomes a regular column
     data = data.reset_index()
     return data
 
@@ -30,12 +30,15 @@ data = get_data()
 # ---- SIDEBAR ----
 st.sidebar.header('Filters')
 ## Create a sidebar filter for date range
-start_date = st.sidebar.date_input("Start date", value=data['date_added'].min())
-end_date = st.sidebar.date_input("End date", value=data['date_added'].max())
+start_date = st.sidebar.date_input("Start date", value=data['date'].min())
+end_date = st.sidebar.date_input("End date", value=data['date'].max())
 
 # Convert start_date and end_date to datetime64[ns, UTC] objects
-start_date = pd.Timestamp(start_date, tz='UTC')
-end_date = pd.Timestamp(end_date, tz='UTC')
+# start_date = pd.Timestamp(start_date, tz='UTC')
+# end_date = pd.Timestamp(end_date, tz='UTC')
+
+start_date = pd.Timestamp(start_date)
+end_date = pd.Timestamp(end_date)
 
 ## Create a sidebar filter for verified_source
 verified_source = st.sidebar.multiselect(
@@ -46,7 +49,7 @@ verified_source = st.sidebar.multiselect(
 )
 
 verified_contacts = data.query(
-    "verified_source == @verified_source and @start_date <= date_added <= @end_date"
+    "verified_source == @verified_source and @start_date <= date <= @end_date"
 )
 
 # Verified Emails
@@ -73,7 +76,7 @@ sync_source = st.sidebar.multiselect(
 
 # Updates
 updates = data.query(
-    "sync_source == @sync_source and @start_date <= date_added <= @end_date and sync_source.notnull()"
+    "sync_source == @sync_source and @start_date <= date <= @end_date and sync_source.notnull()"
 )
 
 ## Email Updates
@@ -123,20 +126,20 @@ col2.metric("Phone", verified_phone)
 # Verified Emails
 # Getting the count for metrics
 verified_emails = verified_contacts[verified_contacts['category'] == 'Verified Email']
-verified_emails = verified_emails.resample('M', on='date_added').count().reset_index()  # reset index here
-verified_emails['date_added'] = verified_emails['date_added'].dt.strftime('%b\'%y')
+verified_emails = verified_emails.resample('M', on='date').count().reset_index()  # reset index here
+verified_emails['date'] = verified_emails['date'].dt.strftime('%b\'%y')
 verified_emails.rename(columns={'parent_id': 'Emails'}, inplace=True)
 
 verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Phone']
-verified_phone = verified_phone.resample('M', on='date_added').count().reset_index()  # reset index here
-verified_phone['date_added'] = verified_phone['date_added'].dt.strftime('%b\'%y')
+verified_phone = verified_phone.resample('M', on='date').count().reset_index()  # reset index here
+verified_phone['date'] = verified_phone['date'].dt.strftime('%b\'%y')
 verified_phone.rename(columns={'parent_id': 'Phones'}, inplace=True)
 
-merged_df = pd.merge(verified_emails, verified_phone, on='date_added', how='outer')
+merged_df = pd.merge(verified_emails, verified_phone, on='date', how='outer')
 
 st.markdown('###')
 st.markdown('##### Monthly Trend')
-fig = px.line(merged_df, x='date_added', y=['Emails', 'Phones'], width=None, line_shape='spline')
+fig = px.line(merged_df, x='date', y=['Emails', 'Phones'], width=None, line_shape='spline')
 fig.update_traces(mode='lines+markers', line_width=4, marker_size=11)
 fig.update_layout(
     xaxis_tickformat='%b\'%y',
@@ -170,10 +173,10 @@ col8.metric("New Alums", new_alums)
 
 st.markdown('###')
 st.markdown('##### Monthly Trend')
-line_chart_data = updates.groupby([pd.Grouper(key='date_added', freq='M'), 'update_type']).size().reset_index(name='count')
-line_chart_data['date_added'] = line_chart_data['date_added'].dt.strftime('%b\'%y')
+line_chart_data = updates.groupby([pd.Grouper(key='date', freq='M'), 'update_type']).size().reset_index(name='count')
+line_chart_data['date'] = line_chart_data['date'].dt.strftime('%b\'%y')
 
-line_chart = px.line(line_chart_data, x='date_added', y='count', color='update_type', width=None, line_shape='spline')
+line_chart = px.line(line_chart_data, x='date', y='count', color='update_type', width=None, line_shape='spline')
 line_chart.update_traces(mode='lines+markers', line_width=4, marker_size=11)
 line_chart.update_layout(
     xaxis_tickformat='%b\'%y',

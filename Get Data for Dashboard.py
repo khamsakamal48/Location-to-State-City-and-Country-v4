@@ -394,7 +394,10 @@ def data_pre_processing():
     data = pd.read_parquet('Databases/Custom Fields')
     
     # Convert to Datetime format
-    data[['date_added', 'date_modified']] = data[['date_added', 'date_modified']].apply(pd.to_datetime, utc=True)
+    data['date_added'] = pd.to_datetime(data['date_added'], utc=True)
+    
+    data['date'] = data['date_added'].dt.strftime('%d-%m-%Y')
+    data['date'] = pd.to_datetime(data['date'], format='%d-%m-%Y', errors='coerce')
     
     # Adding verified sources
     data['verified_source'] = data[['category', 'comment']].apply(lambda x: verified_sources(*x), axis = 1)
@@ -487,7 +490,7 @@ except Exception as Argument:
     
     logging.error(Argument)
     
-    # send_error_emails('Error while downloading data from RE for Dashboard | Database Update Form-Model')
+    send_error_emails('Error while downloading data from RE for Dashboard | Database Update Form-Model')
 
 finally:
     
