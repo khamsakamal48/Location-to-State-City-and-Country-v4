@@ -604,8 +604,6 @@ def update_phones(each_row, constituent_id):
                 likely_phone, score = process.extractOne(each_phone, re_data)
                 if score >= 80:
                     phone = each_phone
-                    logging.info(each_phone)
-                    logging.info(score)
                     break
             except:
                 pass
@@ -636,7 +634,7 @@ def update_phones(each_row, constituent_id):
             except:
                 phone = re.sub("[^0-9]", "", phone)
             
-            if len(phone) != 0:
+            if len(str(phone)) != 0:
             
                 if i == 0:
                     
