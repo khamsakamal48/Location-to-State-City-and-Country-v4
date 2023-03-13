@@ -999,206 +999,211 @@ def update_education(each_row, constituent_id):
     
     # Get the new data
     education_details = each_row[['Class of', 'Degree', 'Department', 'Hostel']].reset_index(drop=True)
-    education_class_of = int(education_details['Class of'][0])
-    education_degree = str(education_details['Degree'][0])
-    education_department = str(education_details['Department'][0])
-    education_hostel = str(education_details['Hostel'][0]).replace('[', '').replace('"', '').replace(']', '')
+    education_class_of = int(str(education_details['Class of'][0]).replace('NA', '0'))
+    education_degree = str(education_details['Degree'][0]).replace('0', '').replace('NA', '')
+    education_department = str(education_details['Department'][0]).replace('nan', '').replace('NA', '').replace('0', '')
+    education_hostel = str(education_details['Hostel'][0]).replace('[', '').replace('"', '').replace(']', '').replace('NA', '')
     
-    # Get education present in RE
-    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/educations'
-    params = {}
-    
-    get_request_re(url, params)
-    
-    # Load to a dataframe
-    re_data = api_to_df(re_api_response).copy()
-    
-    # Cases when no education exists in RE
-    try:
-        re_data = re_data[re_data['school'] == 'Indian Institute of Technology Bombay'].reset_index(drop=True)
+    # Check if there's any new education Data to update
+    if education_class_of != 0 and education_degree != '' and education_department != '' and education_hostel != '':
         
-        # Check if number of educations in RE
-        if len(re_data) == 1:
+        # Get education present in RE
+        url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/educations'
+        params = {}
+        
+        get_request_re(url, params)
+        
+        # Load to a dataframe
+        re_data = api_to_df(re_api_response).copy()
+        
+        # Cases when no education exists in RE
+        try:
+            re_data = re_data[re_data['school'] == 'Indian Institute of Technology Bombay'].reset_index(drop=True)
             
-            education_id = int(re_data['id'][0])
+            # Check if number of educations in RE
+            if len(re_data) == 1:
+                
+                education_id = int(re_data['id'][0])
+                
+                try:
+                    re_class_of = int(re_data['class_of'][0])
+                except:
+                    re_class_of = 0
+                
+                try:
+                    re_degree = str(re_data['degree'][0])
+                except:
+                    re_degree = ''
+                
+                try:
+                    re_department = str(re_data['majors'][0][2:-2])
+                except:
+                    re_department = ''
+                
+                try:
+                    re_hostel = str(re_data['social_organization'][0])
+                except:
+                    re_hostel = ''
+                
+                # Get Data source (Limiting to 50 characters)
+                source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Education"[:50]
+                
+                # Get current year
+                current_year = datetime.now().strftime("%Y")
+                
+                # All values as empty
+                class_of = ''
+                degree = ''
+                department = ''
+                hostel = ''
+                
+                if not(1962 <= int(re_class_of) <= int(current_year)):
+                    
+                    class_of = education_class_of
+                    
+                    # Degree
+                    degree_df = pd.read_parquet('Databases/Degrees')
+                    
+                    if re_degree == 'Other' or re_degree == '':
+                        degree = degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1]
+                    
+                    # Department
+                    if re_department == '' or re_department == 'Other':
+                        department = education_department
+                    
+                    if re_hostel == 'Other' or re_hostel == '':
+                        hostel = education_hostel
+                    
+                    params = {
+                        'class_of': class_of,
+                        'date_graduated': {
+                            'y': class_of
+                        },
+                        'date_left': {
+                            'y': class_of
+                        },
+                        'degree': degree,
+                        'majors': [
+                            department
+                        ],
+                        'social_organization': hostel
+                    }
+                    
+                    # Delete blank values from JSON
+                    for i in range(10):
+                        params = del_blank_values_in_json(params.copy())
+                    
+                    # Check if there any data to upload
+                    if params != {}:
+                        
+                        url = f'https://api.sky.blackbaud.com/constituent/v1/educations/{education_id}'
+                        
+                        patch_request_re(url, params)
+                        
+                        # Add Tags
+                        add_tags(source, 'Sync source', str(params)[:50], constituent_id)
+                
+                elif re_class_of == education_class_of:
+                    
+                    class_of = ''
+                    
+                    # Degree
+                    degree_df = pd.read_parquet('Databases/Degrees')
+                    
+                    if re_degree == 'Other' or re_degree == '':
+                        degree = degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1]
+                    
+                    # Department
+                    if re_department == '' or re_department == 'Other':
+                        department = education_department
+                    
+                    if re_hostel == 'Other' or re_hostel == '':
+                        hostel = education_hostel
+                    
+                    params = {
+                        'class_of': class_of,
+                        'date_graduated': {
+                            'y': class_of
+                        },
+                        'date_left': {
+                            'y': class_of
+                        },
+                        'degree': degree,
+                        'majors': [
+                            department
+                        ],
+                        'social_organization': hostel
+                    }
+                    
+                    # Delete blank values from JSON
+                    for i in range(10):
+                        params = del_blank_values_in_json(params.copy())
+                    
+                    logging.info(params)
+                    
+                    # Check if there any data to upload
+                    if params != {}:
+                        
+                        url = f'https://api.sky.blackbaud.com/constituent/v1/educations/{education_id}'
+                        
+                        patch_request_re(url, params)
+                        
+                        # Add Tags
+                        add_tags(source, 'Sync source', str(params)[:50], constituent_id)
+                
+                else:
+                    # Different education exists than what's provided
+                    re_data_html = re_data.to_html(index=False, classes='table table-stripped')
+                    each_row_html = each_row.to_html(index=False, classes='table table-stripped')
+                    send_mail_different_education(re_data_html, each_row_html, 'Different education data exists in RE and the one provided by Alum')
             
-            try:
-                re_class_of = int(re_data['class_of'][0])
-            except:
-                re_class_of = 0
+            else:
+                
+                # Multiple education exists than what's provided
+                re_data_html = re_data.to_html(index=False, classes='table table-stripped')
+                each_row_html = each_row.to_html(index=False, classes='table table-stripped')
+                send_mail_different_education(re_data_html, each_row_html, 'Multiple education data exists in RE')
+        
+        except:
+            # When no education exists in RE
             
-            try:
-                re_degree = str(re_data['degree'][0])
-            except:
-                re_degree = ''
-            
-            try:
-                re_department = str(re_data['majors'][0][2:-2])
-            except:
-                re_department = ''
-            
-            try:
-                re_hostel = str(re_data['social_organization'][0])
-            except:
-                re_hostel = ''
+            # Degree
+            degree_df = pd.read_parquet('Databases/Degrees')
             
             # Get Data source (Limiting to 50 characters)
             source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Education"[:50]
             
-            # Get current year
-            current_year = datetime.now().strftime("%Y")
+            params = {
+                        'constituent_id': constituent_id,
+                        'school': 'Indian Institute of Technology Bombay',
+                        'class_of': education_class_of,
+                        'date_graduated': {
+                            'y': education_class_of
+                        },
+                        'date_left': {
+                            'y': education_class_of
+                        },
+                        'degree': degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1],
+                        'majors': [
+                            education_department
+                        ],
+                        'social_organization': education_hostel,
+                        'status': 'Graduated',
+                        'primary': True
+                    }
             
-            # All values as empty
-            class_of = ''
-            degree = ''
-            department = ''
-            hostel = ''
+            logging.info(params)
             
-            if not(1962 <= int(re_class_of) <= int(current_year)):
+            # Delete blank values from JSON
+            for i in range(10):
+                params = del_blank_values_in_json(params.copy())
                 
-                class_of = education_class_of
-                
-                # Degree
-                degree_df = pd.read_parquet('Databases/Degrees')
-                
-                if re_degree == 'Other' or re_degree == '':
-                    degree = degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1]
-                
-                # Department
-                if re_department == '' or re_department == 'Other':
-                    department = education_department
-                
-                if re_hostel == 'Other' or re_hostel == '':
-                    hostel = education_hostel
-                
-                params = {
-                    'class_of': class_of,
-                    'date_graduated': {
-                        'y': class_of
-                    },
-                    'date_left': {
-                        'y': class_of
-                    },
-                    'degree': degree,
-                    'majors': [
-                        department
-                    ],
-                    'social_organization': hostel
-                }
-                
-                # Delete blank values from JSON
-                for i in range(10):
-                    params = del_blank_values_in_json(params.copy())
-                
-                # Check if there any data to upload
-                if params != {}:
-                    
-                    url = f'https://api.sky.blackbaud.com/constituent/v1/educations/{education_id}'
-                    
-                    patch_request_re(url, params)
-                    
-                    # Add Tags
-                    add_tags(source, 'Sync source', str(params)[:50], constituent_id)
+            url = 'https://api.sky.blackbaud.com/constituent/v1/educations'
             
-            elif re_class_of == education_class_of:
-                
-                class_of = ''
-                
-                # Degree
-                degree_df = pd.read_parquet('Databases/Degrees')
-                
-                if re_degree == 'Other' or re_degree == '':
-                    degree = degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1]
-                
-                # Department
-                if re_department == '' or re_department == 'Other':
-                    department = education_department
-                
-                if re_hostel == 'Other' or re_hostel == '':
-                    hostel = education_hostel
-                
-                params = {
-                    'class_of': class_of,
-                    'date_graduated': {
-                        'y': class_of
-                    },
-                    'date_left': {
-                        'y': class_of
-                    },
-                    'degree': degree,
-                    'majors': [
-                        department
-                    ],
-                    'social_organization': hostel
-                }
-                
-                # Delete blank values from JSON
-                for i in range(10):
-                    params = del_blank_values_in_json(params.copy())
-                
-                logging.info(params)
-                
-                # Check if there any data to upload
-                if params != {}:
-                    
-                    url = f'https://api.sky.blackbaud.com/constituent/v1/educations/{education_id}'
-                    
-                    patch_request_re(url, params)
-                    
-                    # Add Tags
-                    add_tags(source, 'Sync source', str(params)[:50], constituent_id)
+            post_request_re(url, params)
             
-            else:
-                # Different education exists than what's provided
-                re_data_html = re_data.to_html(index=False, classes='table table-stripped')
-                each_row_html = each_row.to_html(index=False, classes='table table-stripped')
-                send_mail_different_education(re_data_html, each_row_html, 'Different education data exists in RE and the one provided by Alum')
-        
-        else:
-            
-            # Multiple education exists than what's provided
-            re_data_html = re_data.to_html(index=False, classes='table table-stripped')
-            each_row_html = each_row.to_html(index=False, classes='table table-stripped')
-            send_mail_different_education(re_data_html, each_row_html, 'Multiple education data exists in RE')
-    
-    except:
-        # When no education exists in RE
-        
-        # Degree
-        degree_df = pd.read_parquet('Databases/Degrees')
-        
-        # Get Data source (Limiting to 50 characters)
-        source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Education"[:50]
-        
-        params = {
-                    'constituent_id': constituent_id,
-                    'school': 'Indian Institute of Technology Bombay',
-                    'class_of': education_class_of,
-                    'date_graduated': {
-                        'y': education_class_of
-                    },
-                    'date_left': {
-                        'y': education_class_of
-                    },
-                    'degree': degree_df[degree_df['Form Degrees'] == education_degree].reset_index(drop=True).loc[0][1],
-                    'majors': [
-                        education_department
-                    ],
-                    'social_organization': education_hostel,
-                    'status': 'Graduated',
-                    'primary': True
-                }
-        
-        # Delete blank values from JSON
-        for i in range(10):
-            params = del_blank_values_in_json(params.copy())
-            
-        url = 'https://api.sky.blackbaud.com/constituent/v1/educations'
-        
-        post_request_re(url, params)
-        
-        # Add Tags
-        add_tags(source, 'Sync source', str(params)[:50], constituent_id)
+            # Add Tags
+            add_tags(source, 'Sync source', str(params)[:50], constituent_id)
 
 def send_mail_different_education(re_data, each_row, subject):
     
