@@ -33,10 +33,6 @@ st.sidebar.header('Filters')
 start_date = st.sidebar.date_input("Start date", value=data['date'].min())
 end_date = st.sidebar.date_input("End date", value=data['date'].max())
 
-# Convert start_date and end_date to datetime64[ns, UTC] objects
-# start_date = pd.Timestamp(start_date, tz='UTC')
-# end_date = pd.Timestamp(end_date, tz='UTC')
-
 start_date = pd.Timestamp(start_date)
 end_date = pd.Timestamp(end_date)
 
@@ -44,7 +40,6 @@ end_date = pd.Timestamp(end_date)
 verified_source = st.sidebar.multiselect(
     "Select the sources for verified contact details:",
     options=data[data['category'].str.contains('Verified', case=False)]['verified_source'].unique(),
-    # default=data[(data['category'].str.contains('Verified', case=False)) & (data['comment'] != 'verified using RE appeal data')]['verified_source'].unique()
     default=data[data['category'].str.contains('Verified', case=False)]['verified_source'].unique()
 )
 
@@ -125,13 +120,13 @@ col2.metric("Phone", verified_phone)
 # Combine verified_emails and verified_phone into a single dataframe
 # Verified Emails
 # Getting the count for metrics
-verified_emails = verified_contacts[verified_contacts['category'] == 'Verified Email']
-verified_emails = verified_emails.resample('M', on='date').count().reset_index()  # reset index here
+verified_emails = verified_contacts[verified_contacts['category'] == 'Verified Email'].groupby('date').nunique()['parent_id']
+verified_emails = verified_emails.resample('M').sum().reset_index()
 verified_emails['date'] = verified_emails['date'].dt.strftime('%b\'%y')
 verified_emails.rename(columns={'parent_id': 'Emails'}, inplace=True)
 
-verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Phone']
-verified_phone = verified_phone.resample('M', on='date').count().reset_index()  # reset index here
+verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Phone'].groupby('date').nunique()['parent_id']
+verified_phone = verified_phone.resample('M').sum().reset_index()
 verified_phone['date'] = verified_phone['date'].dt.strftime('%b\'%y')
 verified_phone.rename(columns={'parent_id': 'Phones'}, inplace=True)
 
