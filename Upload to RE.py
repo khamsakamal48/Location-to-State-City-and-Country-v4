@@ -1009,8 +1009,11 @@ def update_address(each_row, constituent_id):
                 post_request_re(url, params)
             
             except:
+                
+                re_api_response = pd.DataFrame(re_api_response)
+                
                 if 'county of value' in str(re_api_response['message'][0]).lower():
-                    county = re_api_response['error_args'][1]
+                    county = re_api_response['error_args'].to_list()[0][1]
                     add_county(county)
                     post_request_re(url, params)
                 else:
