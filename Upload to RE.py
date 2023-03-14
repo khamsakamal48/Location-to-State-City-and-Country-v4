@@ -318,15 +318,7 @@ def post_request_re(url, params):
     
     logging.info(re_api_response)
     
-    try:
-        if 'county of value' in str(re_api_response['message'][0]).lower():
-            county = re_api_response['error_args'][1]
-            add_county(county)
-        else:
-            check_errors(re_api_response)
-    
-    except:
-        check_errors(re_api_response)
+    check_errors(re_api_response)
     
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
@@ -1013,7 +1005,16 @@ def update_address(each_row, constituent_id):
             for i in range(10):
                 params = del_blank_values_in_json(params.copy())
             
-            post_request_re(url, params)
+            try:
+                post_request_re(url, params)
+            
+            except:
+                if 'county of value' in str(re_api_response['message'][0]).lower():
+                    county = re_api_response['error_args'][1]
+                    add_county(county)
+                    post_request_re(url, params)
+                else:
+                    raise Exception(f'API returned an error: {re_api_response}')
             
             ## Update Tags
             add_tags(source, 'Sync source', str(address_list[0]).replace('.0','').replace(' 0', '')[:50], constituent_id)
