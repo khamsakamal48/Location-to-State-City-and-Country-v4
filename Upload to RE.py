@@ -999,10 +999,10 @@ def update_education(each_row, constituent_id):
     
     # Get the new data
     education_details = each_row[['Class of', 'Degree', 'Department', 'Hostel']].reset_index(drop=True)
-    education_class_of = int(str(education_details['Class of'][0]).replace('NA', '0'))
-    education_degree = str(education_details['Degree'][0]).replace('0', '').replace('NA', '')
-    education_department = str(education_details['Department'][0]).replace('nan', '').replace('NA', '').replace('0', '')
-    education_hostel = str(education_details['Hostel'][0]).replace('[', '').replace('"', '').replace(']', '').replace('NA', '')
+    education_class_of = int(str(education_details['Class of'][0]).replace('NA', '0').replace('\xa0', '0'))
+    education_degree = str(education_details['Degree'][0]).replace('0', '').replace('NA', '').replace('\xa0', '')
+    education_department = str(education_details['Department'][0]).replace('nan', '').replace('NA', '').replace('0', '').replace('\xa0', '')
+    education_hostel = str(education_details['Hostel'][0]).replace('[', '').replace('"', '').replace(']', '').replace('NA', '').replace('\xa0', '')
     
     # Check if there's any new education Data to update
     if education_class_of != 0 and education_degree != '' and education_department != '' and education_hostel != '':
