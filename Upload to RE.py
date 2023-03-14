@@ -318,7 +318,15 @@ def post_request_re(url, params):
     
     logging.info(re_api_response)
     
-    check_errors(re_api_response)
+    try:
+        if 'county of value' in str(re_api_response['message'][0]).lower():
+            county = re_api_response['error_args'][1]
+            add_county(county)
+        else:
+            check_errors(re_api_response)
+    
+    except:
+        check_errors(re_api_response)
     
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
@@ -349,6 +357,23 @@ def patch_request_re(url, params):
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
     time.sleep(5)
+
+def add_county(county):
+    
+    # counties = 5001
+    # States = 5049
+    
+    code_table_ids = [5001, 5049]
+    
+    for code_table_id in code_table_ids:
+
+        url = f'https://api.sky.blackbaud.com/nxt-data-integration/v1/re/codetables/{code_table_id}/tableentries'
+        
+        params = {
+            'long_description': county
+        }
+        
+        post_request_re(url, params)
 
 def del_blank_values_in_json(d):
     """
