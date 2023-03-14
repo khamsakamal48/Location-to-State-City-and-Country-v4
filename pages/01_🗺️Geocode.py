@@ -19,12 +19,21 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 load_dotenv()
 api_key = os.getenv('API_KEY')
 
+# Set Proxy
+http_proxy = os.environ.get('HTTP_PROXY')
+https_proxy = os.environ.get('HTTPS_PROXY')
+proxies = {}
+if http_proxy:
+    proxies['http'] = http_proxy
+if https_proxy:
+    proxies['https'] = https_proxy
+
 st.title('Find City, State and Country')
 
 address = st.text_input('Enter address or location')
 if st.button('Geocode'):
     url = f'https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}&language=en'
-    response = requests.get(url).json()
+    response = requests.get(url, proxies=proxies).json()
     if response['status'] == 'OK':
         results = response['results'][0]
         city = state = country = ''
