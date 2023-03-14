@@ -1528,7 +1528,7 @@ try:
     set_api_request_strategy()
     
     # # Get Excel file from Microsoft Form
-    # download_excel(FORM_URL)
+    download_excel(FORM_URL)
     
     # Load file to a Dataframe
     form_data = load_data('Form Responses.xlsx').copy()
@@ -1615,7 +1615,7 @@ except Exception as Argument:
     
     logging.error(Argument)
     
-    # send_error_emails('Error while uploading data to RE | Database Update Form-Model')
+    send_error_emails('Error while uploading data to RE | Database Update Form-Model')
 
 finally:
     
