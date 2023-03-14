@@ -210,6 +210,12 @@ table_style = """
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
+    th:first-child, td:first-child {
+        width: 25%;
+    }
+    th:last-child, td:last-child {
+        width: 75%;
+    }
     tr:hover {
         background-color: #f5f5f5;
     }
@@ -226,11 +232,6 @@ updates_breakdown = updates.groupby(
 
 updates_breakdown = updates_breakdown.sort_values(by=['Updates'], ascending=False)
 
-# Render table
-# updates_breakdown = updates_breakdown.to_html(classes="data", header="true", index=False, justify='left')
-# updates_breakdown = updates_breakdown.replace('<table', '<table style="width:50%"')
-# updates_breakdown = f'<div style="overflow: auto;">{updates_breakdown}</div>'
-
 col1, col2 = st.columns(2)
 col1.markdown("##")
 col1.markdown('##### Updates Breakdown')
@@ -240,12 +241,23 @@ hide_table_row_index = """
             <style>
             thead tr th:first-child {display:none}
             tbody th {display:none}
+            .streamlit-container {
+                width: 100%;
+            }
             </style>
             """
+
 
 # Inject CSS with Markdown
 col1.markdown(hide_table_row_index, unsafe_allow_html=True)
 
-# col1.write(updates_breakdown, unsafe_allow_html=True)
 col1.table(updates_breakdown)
 col1.write('The increased count is due to the fact there are constituents for whom multiple data features (email, phone, etc.) got updated for each row of records and hence there’s an overlap')
+
+# Pie Chart
+pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'], title=' ', color=np.log10(updates_breakdown['Updates']))
+pie_chart.update_traces(textposition='outside', textinfo='percent+label')
+pie_chart.update_layout(showlegend=False,
+                        margin=dict(t=50, b=30, l=0, r=0),
+                        font=dict(size=13))
+col2.plotly_chart(pie_chart)
