@@ -1010,6 +1010,17 @@ def update_address(each_row, constituent_id):
             
             except:
                 
+                retrieve_token()
+                
+                # Request headers
+                headers = {
+                'Bb-Api-Subscription-Key': RE_API_KEY,
+                'Authorization': 'Bearer ' + access_token,
+                'Content-Type': 'application/json',
+                }
+                
+                re_api_response = http.post(url, params=params, headers=headers, json=params).json()
+                
                 re_api_response = pd.DataFrame(re_api_response)
                 
                 if 'county of value' in str(re_api_response['message'][0]).lower():

@@ -188,3 +188,64 @@ line_chart.update_layout(
     margin=dict(l=0, r=0, t=0, b=0)
 )
 st.plotly_chart(line_chart, use_container_width=True)
+
+st.markdown("""---""")
+
+# Row D
+st.markdown('## Data Update Breakdown')
+
+# Set table style
+table_style = """
+<style>
+    table {
+        width: 100%;
+    }
+    th {
+        background-color: #4285f4;
+        color: white;
+        text-align: left;
+    }
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+"""
+
+updates_breakdown = updates.groupby(
+    by=['update_type']).nunique()['parent_id'].reset_index().rename(
+        columns={
+            'update_type': 'Description',
+            'parent_id': 'Updates'
+        }
+    )
+
+updates_breakdown = updates_breakdown.sort_values(by=['Updates'], ascending=False)
+
+# Render table
+# updates_breakdown = updates_breakdown.to_html(classes="data", header="true", index=False, justify='left')
+# updates_breakdown = updates_breakdown.replace('<table', '<table style="width:50%"')
+# updates_breakdown = f'<div style="overflow: auto;">{updates_breakdown}</div>'
+
+col1, col2 = st.columns(2)
+col1.markdown("##")
+col1.markdown('##### Updates Breakdown')
+
+# CSS to inject contained in a string
+hide_table_row_index = """
+            <style>
+            thead tr th:first-child {display:none}
+            tbody th {display:none}
+            </style>
+            """
+
+# Inject CSS with Markdown
+col1.markdown(hide_table_row_index, unsafe_allow_html=True)
+
+# col1.write(updates_breakdown, unsafe_allow_html=True)
+col1.table(updates_breakdown)
+col1.write('The increased count is due to the fact there are constituents for whom multiple data features (email, phone, etc.) got updated for each row of records and hence there’s an overlap')
