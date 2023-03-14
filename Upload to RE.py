@@ -297,6 +297,8 @@ def get_request_re(url, params):
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
     time.sleep(5)
+    
+    return re_api_response
 
 def post_request_re(url, params):
     
@@ -786,9 +788,6 @@ def update_employment(each_row, constituent_id):
             except:
                 pass
         
-        logging.info('I am here')
-        logging.info(each_org)
-        
         relationship_id = re_data[re_data['name'] == org]['id'].reset_index(drop=True)[0]
         
         # Check if designation needs an update
@@ -835,9 +834,6 @@ def update_employment(each_row, constituent_id):
         # if str(employee_details.loc[0]['Organization Name']) != '' or str(employee_details.loc[0]['Organization Name']) != 'NA' or str(employee_details.loc[0]['Organization Name']) != 'na' or str(employee_details.loc[0]['Organization Name']) != 'Other' or str(employee_details.loc[0]['Organization Name']) != 0:
         
             url = 'https://api.sky.blackbaud.com/constituent/v1/relationships'
-            
-            logging.info('I am here')
-            logging.info(len(str(employee_details.loc[0]['Organization Name'])))
             
             ## Check if organisation is a University
             school_matches = ['school', 'college', 'university', 'institute', 'iit', 'iim']
@@ -895,10 +891,10 @@ def update_address(each_row, constituent_id):
     params = {}
     
     ### API request
-    get_request_re(url, params)
+    # get_request_re(url, params)
     
     ### Load to DataFrame
-    re_data = api_to_df(re_api_response).copy()
+    re_data = api_to_df(get_request_re(url, params)).copy()
     re_data = re_data[['id', 'constituent_id', 'formatted_address']]
     re_data = re_data.replace(to_replace=['\r\n', '\t', '\n'], value=', ', regex=True)
     re_data = re_data.replace(to_replace=['  '], value=' ', regex=True)
@@ -942,6 +938,7 @@ def update_address(each_row, constituent_id):
     
     # Check if there's any new addresses to add and that the existing address (to be updated) is not empty
     if missing_values == [] and not pd.isna(each_row.loc[0]['Address Lines']):
+        
         # Mark existing org as primary
         for each_address in re_address_list:
             try:
@@ -981,7 +978,6 @@ def update_address(each_row, constituent_id):
         if postal_code == 0:
             postal_code = ''
         
-        
         # Check if there's any address to add
         if address_lines != '' and city != '' and state != '' and country != '' and postal_code != '':
             
@@ -1009,17 +1005,6 @@ def update_address(each_row, constituent_id):
                 post_request_re(url, params)
             
             except:
-                
-                retrieve_token()
-                
-                # Request headers
-                headers = {
-                'Bb-Api-Subscription-Key': RE_API_KEY,
-                'Authorization': 'Bearer ' + access_token,
-                'Content-Type': 'application/json',
-                }
-                
-                re_api_response = http.post(url, params=params, headers=headers, json=params).json()
                 
                 re_api_response = pd.DataFrame(re_api_response)
                 
@@ -1543,7 +1528,7 @@ try:
     set_api_request_strategy()
     
     # # Get Excel file from Microsoft Form
-    download_excel(FORM_URL)
+    # download_excel(FORM_URL)
     
     # Load file to a Dataframe
     form_data = load_data('Form Responses.xlsx').copy()
@@ -1630,7 +1615,7 @@ except Exception as Argument:
     
     logging.error(Argument)
     
-    send_error_emails('Error while uploading data to RE | Database Update Form-Model')
+    # send_error_emails('Error while uploading data to RE | Database Update Form-Model')
 
 finally:
     
