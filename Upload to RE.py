@@ -9,6 +9,8 @@ import imaplib
 import datetime
 import logging
 import time
+import random
+import string
 import pandas as pd
 import numpy as np
 
@@ -297,8 +299,6 @@ def get_request_re(url, params):
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
     time.sleep(5)
-    
-    return re_api_response
 
 def post_request_re(url, params):
     
@@ -356,18 +356,47 @@ def add_county(county):
     
     # counties = 5001
     # States = 5049
-    
+    i = 0
     code_table_ids = [5001, 5049]
     
     for code_table_id in code_table_ids:
-
+        
+        if i == 1:
+            
+            now = datetime.datetime.now()
+            
+            # Generate either a 2-digit or 3-digit number randomly
+            if random.random() < 0.5:
+                unique_num = int(now.strftime('%j%H%M%S%f')[:9])
+            else:
+                unique_num = int(now.strftime('%j%H%M%S%f')[:10])
+                
+            # Generate a random suffix character (either an alphabet or a special character)
+            suffix_char = random.choice(string.ascii_lowercase + string.digits + '!@#$%^&*()')
+            
+            # Concatenate the unique number and the suffix character
+            short_description = str(unique_num % 1000) + suffix_char
+            
+            if len(short_description) > 3:
+                short_description = short_description[1:]
+        
+        else:
+            short_description = ''
+        
         url = f'https://api.sky.blackbaud.com/nxt-data-integration/v1/re/codetables/{code_table_id}/tableentries'
         
         params = {
-            'long_description': county
+            'long_description': county,
+            'short_description': short_description
         }
         
+        # Delete blank values from JSON
+        for i in range(10):
+            params = del_blank_values_in_json(params.copy())
+        
         post_request_re(url, params)
+        
+        i += 1
 
 def del_blank_values_in_json(d):
     """
@@ -890,11 +919,11 @@ def update_address(each_row, constituent_id):
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/addresses'
     params = {}
     
-    ### API request
-    # get_request_re(url, params)
+    ## API request
+    get_request_re(url, params)
     
     ### Load to DataFrame
-    re_data = api_to_df(get_request_re(url, params)).copy()
+    re_data = api_to_df(re_api_response).copy()
     re_data = re_data[['id', 'constituent_id', 'formatted_address']]
     re_data = re_data.replace(to_replace=['\r\n', '\t', '\n'], value=', ', regex=True)
     re_data = re_data.replace(to_replace=['  '], value=' ', regex=True)
@@ -971,10 +1000,12 @@ def update_address(each_row, constituent_id):
         city = str(each_row['City'][0])
         state = str(each_row['State'][0])
         country = str(each_row['Country'][0])
+        
         try:
             postal_code = int(str(each_row['Postal Code'][0]).replace('.0',''))
         except:
             postal_code = str(each_row['Postal Code'][0]).replace('.0','')
+        
         if postal_code == 0:
             postal_code = ''
         
@@ -1000,17 +1031,16 @@ def update_address(each_row, constituent_id):
             # Delete blank values from JSON
             for i in range(10):
                 params = del_blank_values_in_json(params.copy())
+                
+            # post_request_re(url, params)
             
             try:
                 post_request_re(url, params)
             
             except:
                 
-                re_api_response = pd.DataFrame(re_api_response)
-                
-                if 'county of value' in str(re_api_response['message'][0]).lower():
-                    county = re_api_response['error_args'].to_list()[0][1]
-                    add_county(county)
+                if 'county of value' in str(re_api_response).lower():
+                    add_county(state)
                     post_request_re(url, params)
                 else:
                     raise Exception(f'API returned an error: {re_api_response}')
