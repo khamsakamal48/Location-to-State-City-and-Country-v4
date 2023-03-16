@@ -30,10 +30,13 @@ if https_proxy:
 
 st.title('Find City, State and Country')
 
+s = requests.Session()
+s.proxies = proxies
+
 address = st.text_input('Enter address or location')
 if st.button('Geocode'):
     url = f'https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}&language=en'
-    response = requests.get(url, proxies=proxies).json()
+    response = s.get(url).json()
     if response['status'] == 'OK':
         results = response['results'][0]
         city = state = country = ''
