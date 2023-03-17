@@ -217,16 +217,6 @@ def retrieve_token():
         data = json.load(access_token_output)
         access_token = data['access_token']
 
-def check_errors(re_api_response):
-    
-    logging.info('Checking for exceptions')
-    
-    error_keywords = ['failed', 'invalid', 'unauthorized', 'bad request', 'forbidden', 'not found']
-    
-    for keyword in error_keywords:
-        if keyword in str(re_api_response).lower():
-            raise Exception(f'API returned an error: {re_api_response}')
-
 def get_request_re(url, params):
     
     logging.info('Running GET Request from RE function')
@@ -245,8 +235,6 @@ def get_request_re(url, params):
     re_api_response = http.get(url, params=params, headers=headers).json()
     
     logging.info(re_api_response)
-    
-    # check_errors(re_api_response)
 
 def post_request_re(url, params):
     
@@ -267,8 +255,6 @@ def post_request_re(url, params):
     re_api_response = http.post(url, params=params, headers=headers, json=params).json()
     
     logging.info(re_api_response)
-    
-    # check_errors(re_api_response)
 
 def patch_request_re(url, params):
     
@@ -289,8 +275,6 @@ def patch_request_re(url, params):
     re_api_response = http.patch(url, headers=headers, data=json.dumps(params))
     
     logging.info(re_api_response)
-    
-    # check_errors(re_api_response)
 
 def api_to_df(response):
     
@@ -354,21 +338,10 @@ def load_from_json_to_parquet():
             # Convert non-string values to strings
             json_content = convert_to_strings(json_content)
             
-            # Load from JSON to pandas
-            # reff = pd.json_normalize(json_content['value'])
-            
-            # # Load to a dataframe
-            # df_ = pd.DataFrame(data=reff)
+            # Load to a dataframe
             df_ = api_to_df(json_content)
             
             df = pd.concat([df, df_])
-            
-            # try:
-            #     # Append/Concat datframes
-            #     df = pd.concat([df, df_])
-                
-            # except:
-            #     df = df_.copy()
     
     # export from dataframe to parquet
     logging.info('Loading DataFrame to file')
@@ -413,6 +386,7 @@ def data_pre_processing():
     
     # Adding Type of Email
     data['value'].fillna('', inplace=True)
+    # data['email_type'] = data['email_type'].astype(str, errors='Ignore')
     data['email_type'] = data['value'].apply(lambda x: email_type(x))
     
     # export from dataframe to parquet
@@ -505,11 +479,6 @@ try:
     
     # Data Pre-processing
     data_pre_processing()
-    
-    # Check for errors
-    # with open(f'Logs/{process_name}.log') as log:
-    #     contents = log.read()
-    #     check_errors(contents)
 
 except Exception as Argument:
     
@@ -519,8 +488,8 @@ except Exception as Argument:
 
 finally:
     
-    # # Housekeeping
-    # housekeeping()
+    # Housekeeping
+    housekeeping()
     
     # Stop Logging
     stop_logging()
