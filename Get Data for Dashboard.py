@@ -94,7 +94,7 @@ def get_env_variables():
     SMTP_PORT = os.getenv('SMTP_PORT')
     SEND_TO  = os.getenv('SEND_TO')
 
-def send_error_emails(subject):
+def send_error_emails(subject, Argument):
     logging.info('Sending email for an error')
     
     message = MIMEMultipart()
@@ -268,7 +268,7 @@ def post_request_re(url, params):
     
     logging.info(re_api_response)
     
-    check_errors(re_api_response)
+    # check_errors(re_api_response)
 
 def patch_request_re(url, params):
     
@@ -290,7 +290,7 @@ def patch_request_re(url, params):
     
     logging.info(re_api_response)
     
-    check_errors(re_api_response)
+    # check_errors(re_api_response)
 
 def api_to_df(response):
     
@@ -341,6 +341,8 @@ def load_from_json_to_parquet():
     # Get a list of all the file paths that ends with wildcard from in specified directory
     fileList = glob.glob('API_Response_RE_*.json')
     
+    df = pd.DataFrame()
+    
     for each_file in fileList:
         
         # Open Each JSON File
@@ -353,19 +355,23 @@ def load_from_json_to_parquet():
             json_content = convert_to_strings(json_content)
             
             # Load from JSON to pandas
-            reff = pd.json_normalize(json_content['value'])
+            # reff = pd.json_normalize(json_content['value'])
             
-            # Load to a dataframe
-            df_ = pd.DataFrame(data=reff)
+            # # Load to a dataframe
+            # df_ = pd.DataFrame(data=reff)
+            df_ = api_to_df(json_content)
             
-            try:
-                # Append/Concat datframes
-                df = pd.concat([df, df_])
+            df = pd.concat([df, df_])
+            
+            # try:
+            #     # Append/Concat datframes
+            #     df = pd.concat([df, df_])
                 
-            except:
-                df = df_.copy()
-                
+            # except:
+            #     df = df_.copy()
+    
     # export from dataframe to parquet
+    logging.info('Loading DataFrame to file')
     df.to_parquet('Databases/Custom Fields', index=False)
 
 def convert_to_strings(obj):
@@ -405,8 +411,27 @@ def data_pre_processing():
     # Adding sync sources
     data[['sync_source', 'update_type']] = data[['value']].apply(lambda x: pd.Series(sync_source(x[0])), axis=1)
     
+    # Adding Type of Email
+    data['value'].fillna('', inplace=True)
+    data['email_type'] = data['value'].apply(lambda x: email_type(x))
+    
     # export from dataframe to parquet
     data.to_parquet('Databases/Custom Fields', index=False)
+
+def email_type(email):
+    
+    iitb_emails = ['iitb.ac.in', 'sjmsom.in' or 'iitbombay.org']
+    
+    if any(text in email for text in iitb_emails):
+        type = 'IITB Email'
+    
+    elif '@' in email:
+        type = 'Non-IITB Email'
+    
+    else:
+        type = np.NaN
+    
+    return type
 
 def verified_sources(category, comment):
     
@@ -449,12 +474,12 @@ def sync_source(source):
         update_type = 'Phone'
     elif update_type == 'Linkedin':
         update_type = 'Online Presence'
-    elif update_type == 'Gender' or update_type == 'Gender & Title' or update_type == 'Pan Card' or update_type == 'Name':
-        update_type = 'Bio Details'
     elif update_type == 'Employment - Org. Name' or update_type == 'Employment - Position':
         update_type = 'Employment'
     elif update_type == 'Address':
         update_type = 'Location'
+    elif update_type == 'Gender' or update_type == 'Gender & Title' or update_type == 'Name' or 'pan' in str(update_type).lower():
+        update_type = 'Bio Details'
     
     return sync_source, update_type
 
@@ -482,20 +507,20 @@ try:
     data_pre_processing()
     
     # Check for errors
-    with open(f'Logs/{process_name}.log') as log:
-        contents = log.read()
-        check_errors(contents)
+    # with open(f'Logs/{process_name}.log') as log:
+    #     contents = log.read()
+    #     check_errors(contents)
 
 except Exception as Argument:
     
     logging.error(Argument)
     
-    send_error_emails('Error while downloading data from RE for Dashboard | Database Update Form-Model')
+    send_error_emails('Error while downloading data from RE for Dashboard | Database Update Form-Model', Argument)
 
 finally:
     
-    # Housekeeping
-    housekeeping()
+    # # Housekeeping
+    # housekeeping()
     
     # Stop Logging
     stop_logging()
