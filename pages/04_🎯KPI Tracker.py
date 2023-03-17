@@ -18,11 +18,11 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the Parquet file into a Pandas dataframe
-@st.cache_data
+# @st.cache_data
 def get_data():
     data = pd.read_parquet('Databases/Custom Fields')
     # Reset the index so that the date column becomes a regular column
-    data = data.reset_index()
+    data = data.reset_index(drop=True)
     return data
 
 data = get_data()
@@ -45,7 +45,7 @@ verified_source = st.sidebar.multiselect(
 
 verified_contacts = data.query(
     "verified_source == @verified_source and @start_date <= date <= @end_date"
-)
+).reset_index(drop=True)
 
 # Verified Emails
 # Getting the count for metrics
@@ -72,7 +72,7 @@ sync_source = st.sidebar.multiselect(
 # Updates
 updates = data.query(
     "sync_source == @sync_source and @start_date <= date <= @end_date and sync_source.notnull()"
-)
+).reset_index(drop=True)
 
 ## Email Updates
 email_updates = updates[updates['update_type'] == 'Email']['parent_id'].nunique()
@@ -232,9 +232,9 @@ updates_breakdown = updates.groupby(
 
 updates_breakdown = updates_breakdown.sort_values(by=['Updates'], ascending=False)
 
-col1, col2 = st.columns(2)
-col1.markdown("##")
-col1.markdown('##### Updates Breakdown')
+st.markdown("##")
+st.markdown('##### Updates Breakdown')
+col1, col2 = st.columns([1,2])
 
 # CSS to inject contained in a string
 hide_table_row_index = """
@@ -251,13 +251,35 @@ hide_table_row_index = """
 # Inject CSS with Markdown
 col1.markdown(hide_table_row_index, unsafe_allow_html=True)
 
-col1.table(updates_breakdown)
+col1.table(updates_breakdown.style.format(thousands=','))
 col1.write('The increased count is due to the fact there are constituents for whom multiple data features (email, phone, etc.) got updated for each row of records and hence there’s an overlap')
 
 # Pie Chart
-pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'], title=' ', color=np.log10(updates_breakdown['Updates']))
+pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'], title='', color=np.log10(updates_breakdown['Updates']))
 pie_chart.update_traces(textposition='outside', textinfo='percent+label')
 pie_chart.update_layout(showlegend=False,
-                        margin=dict(t=50, b=30, l=0, r=0),
-                        font=dict(size=13))
+                        # margin=dict(t=50, b=30, l=0, r=0),
+                        # font=dict(size=13)
+                        )
 col2.plotly_chart(pie_chart)
+
+st.markdown("""---""")
+st.markdown("##")
+st.markdown('##### Email Updates Breakdown')
+
+email_updates_breakdown = updates.groupby(
+    by=['email_type']).nunique()['parent_id'].reset_index().rename(
+        columns={
+            'email_type': 'Description',
+            'parent_id': 'Updates'
+        }
+    )
+
+email_updates_breakdown = email_updates_breakdown.sort_values(by=['Description'], ascending=False)
+
+col1, col2 = st.columns([1, 2])
+
+# Inject CSS with Markdown
+col1.markdown(hide_table_row_index, unsafe_allow_html=True)
+
+col1.table(email_updates_breakdown)
