@@ -39,8 +39,8 @@ end_date = pd.Timestamp(end_date)
 ## Create a sidebar filter for verified_source
 verified_source = st.sidebar.multiselect(
     "Select the sources for verified contact details:",
-    options=data[data['category'].str.contains('Verified', case=False)]['verified_source'].unique(),
-    default=data[data['category'].str.contains('Verified', case=False)]['verified_source'].unique()
+    options=data[data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique(),
+    default=data[data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique()
 )
 
 verified_contacts = data.query(
@@ -64,9 +64,8 @@ verified_phone = "{:,}".format(verified_phone)
 ## Create a sidebar filter for verified_source
 sync_source = st.sidebar.multiselect(
     "Select the sources for updates:",
-    options=data[data['sync_source'].notnull()]['sync_source'].unique(),
-    # default=data[(data['category'].str.contains('Verified', case=False)) & (data['comment'] != 'verified using RE appeal data')]['verified_source'].unique()
-    default=data[data['sync_source'].notnull()]['sync_source'].unique()
+    options=data['sync_source'].drop_duplicates().dropna().sort_values(),
+    default=data['sync_source'].drop_duplicates().dropna().sort_values()
 )
 
 # Updates
@@ -267,7 +266,10 @@ st.markdown("""---""")
 st.markdown("##")
 st.markdown('##### Email Updates Breakdown')
 
-email_updates_breakdown = updates.groupby(
+email_updates_breakdown = updates[updates['email_type'].notnull()].reset_index(drop=True)
+email_updates_breakdown = email_updates_breakdown.copy()
+
+email_updates_breakdown = email_updates_breakdown.groupby(
     by=['email_type']).nunique()['parent_id'].reset_index().rename(
         columns={
             'email_type': 'Description',
@@ -282,4 +284,4 @@ col1, col2 = st.columns([1, 2])
 # Inject CSS with Markdown
 col1.markdown(hide_table_row_index, unsafe_allow_html=True)
 
-col1.table(email_updates_breakdown)
+col1.table(email_updates_breakdown.style.format(thousands=','))

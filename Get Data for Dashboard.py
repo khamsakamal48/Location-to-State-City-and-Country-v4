@@ -385,16 +385,16 @@ def data_pre_processing():
     data[['sync_source', 'update_type']] = data[['value']].apply(lambda x: pd.Series(sync_source(x[0])), axis=1)
     
     # Adding Type of Email
-    data['value'].fillna('', inplace=True)
+    data['comment'].fillna('', inplace=True)
     # data['email_type'] = data['email_type'].astype(str, errors='Ignore')
-    data['email_type'] = data['value'].apply(lambda x: email_type(x))
+    data['email_type'] = data['comment'].apply(lambda x: email_type(x))
     
     # export from dataframe to parquet
     data.to_parquet('Databases/Custom Fields', index=False)
 
 def email_type(email):
     
-    iitb_emails = ['iitb.ac.in', 'sjmsom.in' or 'iitbombay.org']
+    iitb_emails = ['iitb.ac.in', 'sjmsom.in', 'iitbombay.org']
     
     if any(text in email for text in iitb_emails):
         type = 'IITB Email'
