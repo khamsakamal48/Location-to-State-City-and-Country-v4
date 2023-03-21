@@ -386,11 +386,23 @@ def data_pre_processing():
     
     # Adding Type of Email
     data['comment'].fillna('', inplace=True)
-    # data['email_type'] = data['email_type'].astype(str, errors='Ignore')
     data['email_type'] = data['comment'].apply(lambda x: email_type(x))
+    
+    # Extracting domain of email address
+    data['email_domain'] = data['comment'].apply(lambda x: extract_domain(x))
     
     # export from dataframe to parquet
     data.to_parquet('Databases/Custom Fields', index=False)
+
+# Function to extract domain from email
+def extract_domain(email):
+    
+    try:
+        domain = email.split('@')[1]
+    except:
+        domain = np.NaN
+    
+    return domain
 
 def email_type(email):
     
