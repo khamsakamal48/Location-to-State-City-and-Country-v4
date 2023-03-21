@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(
     page_title='Database KPI Tracker',
@@ -233,7 +234,7 @@ updates_breakdown = updates_breakdown.sort_values(by=['Updates'], ascending=Fals
 
 st.markdown("##")
 st.markdown('##### Updates Breakdown')
-col1, col2 = st.columns([1,2])
+col1, col2, col3 = st.columns([2, 0.5, 2])
 
 # CSS to inject contained in a string
 hide_table_row_index = """
@@ -253,14 +254,16 @@ col1.markdown(hide_table_row_index, unsafe_allow_html=True)
 col1.table(updates_breakdown.style.format(thousands=','))
 col1.write('The increased count is due to the fact there are constituents for whom multiple data features (email, phone, etc.) got updated for each row of records and hence there’s an overlap')
 
+col2.write(' ')
+
 # Pie Chart
 pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'], title='', color=np.log10(updates_breakdown['Updates']))
 pie_chart.update_traces(textposition='outside', textinfo='percent+label')
 pie_chart.update_layout(showlegend=False,
-                        # margin=dict(t=50, b=30, l=0, r=0),
+                        margin=dict(t=10, b=0, l=0, r=175),
                         # font=dict(size=13)
                         )
-col2.plotly_chart(pie_chart)
+col3.plotly_chart(pie_chart)
 
 st.markdown("""---""")
 st.markdown("##")
@@ -269,7 +272,7 @@ st.markdown('##### Email Updates Breakdown')
 email_updates_breakdown = updates[updates['email_type'].notnull()].reset_index(drop=True)
 email_updates_breakdown = email_updates_breakdown.copy()
 
-email_updates_breakdown = email_updates_breakdown.groupby(
+email_updates_type_breakdown = email_updates_breakdown.groupby(
     by=['email_type']).nunique()['parent_id'].reset_index().rename(
         columns={
             'email_type': 'Description',
@@ -277,11 +280,57 @@ email_updates_breakdown = email_updates_breakdown.groupby(
         }
     )
 
-email_updates_breakdown = email_updates_breakdown.sort_values(by=['Description'], ascending=False)
+email_updates_type_breakdown = email_updates_type_breakdown.sort_values(by=['Description'], ascending=False)
 
-col1, col2 = st.columns([1, 2])
+col1, col2, col3 = st.columns([2, 0.5, 2])
 
 # Inject CSS with Markdown
 col1.markdown(hide_table_row_index, unsafe_allow_html=True)
 
-col1.table(email_updates_breakdown.style.format(thousands=','))
+col1.table(email_updates_type_breakdown.style.format(thousands=','))
+
+# Create a Sunburst chart
+
+# Group email domains by count and get top 5
+top_domains = email_updates_breakdown['email_domain'].value_counts().nlargest(5)
+
+# Replace all other domains with 'Others'
+email_updates_breakdown.loc[~email_updates_breakdown['email_domain'].isin(top_domains.index), 'email_domain'] = 'Others'
+
+# Group by email type and email domain, and get unique count of IDs
+email_updates_breakdown_grouped = email_updates_breakdown.groupby(
+    ['email_type', 'email_domain']
+    )['parent_id'].nunique().reset_index().rename(
+        columns={
+            'email_type': 'Description',
+            'email_domain': 'Domain',
+            'parent_id': 'Count'
+        }
+    )
+
+# Create Sunburst chart
+email_updates_breakdown_fig = px.sunburst(
+    email_updates_breakdown_grouped,
+    path=['Description', 'Domain'],
+    values='Count'
+)
+
+email_updates_breakdown_fig.update_layout(showlegend=True,
+                        margin=dict(t=0, b=0, l=0, r=175),
+                        font=dict(size=13)
+                        )
+
+col3.plotly_chart(email_updates_breakdown_fig)
+
+# Define the sorting order
+order = {'Others': 0}
+
+# Sort the DataFrame
+email_updates_breakdown_grouped['sorting_value'] = email_updates_breakdown_grouped['Domain'].map(order)
+email_updates_breakdown_grouped['sorting_value'].fillna(1, inplace=True)
+email_updates_breakdown_grouped.sort_values(['Description', 'sorting_value', 'Count'], ascending=[False, False, False], inplace=True)
+email_updates_breakdown_grouped.drop(columns=['sorting_value'], inplace=True)
+
+col1.write('###')
+col1.table(email_updates_breakdown_grouped.style.format(thousands=','))
+col2.write(' ')
