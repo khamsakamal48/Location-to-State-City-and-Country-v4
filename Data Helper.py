@@ -15,4 +15,4 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Add a title and intro text
 st.title('Data Helper')
-st.text('This is a web app to assist in Data Cleaning and Processing.')
+st.text('This is a web app to assist in Data Cleaning, Processing and Tracking.')
