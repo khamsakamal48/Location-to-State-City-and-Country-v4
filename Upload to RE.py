@@ -25,6 +25,8 @@ from dotenv import load_dotenv
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 from nameparser import HumanName
+from datetime import date
+from datetime import timedelta
 
 def set_current_directory():
     
@@ -492,7 +494,7 @@ def update_emails(each_row, constituent_id):
         missing_values = pd.DataFrame(email_list).reset_index(drop=True)
     
     # Get Data source (Limiting to 50 characters)
-    source = f"{each_row['Enter the source of your data?'][0].title()} - Auto | Email"[:50]
+    source = f"{each_row['Enter the source of your data?'][0].title().replace('-', '_')} - Auto | Email"[:50]
     
     # Check if there's any new email address to add and that the existing email address (to be updated) is not empty
     if len(missing_values) == 0 and not pd.isna(each_row.loc[0]['Email 1']):
@@ -640,7 +642,7 @@ def update_phones(each_row, constituent_id):
         missing_values = missing
     
     # Get Data source (Limiting to 50 characters)
-    source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Phone"[:50]
+    source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Phone"[:50]
     
     # Check if there's any new phone number to add and that the existing phone number (to be updated) is not empty
     if missing_values == [] and not pd.isna(each_row.loc[0]['Phone number 1']):
@@ -771,7 +773,7 @@ def update_employment(each_row, constituent_id):
         missing_values = missing
     
     # Get Data source (Limiting to 50 characters)
-    source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Employment"[:50]
+    source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Employment"[:50]
     
     # Get dates
     try:
@@ -963,7 +965,7 @@ def update_address(each_row, constituent_id):
         missing_values = missing
     
     # Get Data source (Limiting to 50 characters)
-    source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Address"[:50]
+    source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Address"[:50]
     
     # Check if there's any new addresses to add and that the existing address (to be updated) is not empty
     if missing_values == [] and not pd.isna(each_row.loc[0]['Address Lines']):
@@ -1031,8 +1033,6 @@ def update_address(each_row, constituent_id):
             # Delete blank values from JSON
             for i in range(10):
                 params = del_blank_values_in_json(params.copy())
-                
-            # post_request_re(url, params)
             
             try:
                 post_request_re(url, params)
@@ -1101,7 +1101,7 @@ def update_education(each_row, constituent_id):
                     re_hostel = ''
                 
                 # Get Data source (Limiting to 50 characters)
-                source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Education"[:50]
+                source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Education"[:50]
                 
                 # Get current year
                 current_year = datetime.now().strftime("%Y")
@@ -1226,7 +1226,7 @@ def update_education(each_row, constituent_id):
             degree_df = pd.read_parquet('Databases/Degrees')
             
             # Get Data source (Limiting to 50 characters)
-            source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Education"[:50]
+            source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Education"[:50]
             
             params = {
                         'constituent_id': constituent_id,
@@ -1386,7 +1386,7 @@ def update_name(each_row, constituent_id):
             patch_request_re(url, params)
             
             ## Update Tags
-            source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Name"[:50]
+            source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Name"[:50]
             add_tags(source, 'Sync Source', str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:50], constituent_id)
             
             # Send email for different name
@@ -1414,7 +1414,7 @@ def update_name(each_row, constituent_id):
             patch_request_re(url, params)
             
             ## Update Tags
-            source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Name"[:50]
+            source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Name"[:50]
             add_tags(source, 'Sync Source', str(str(title) + ' ' + str(first_name) + ' ' + str(middle_name) + ' ' + str(last_name))[:50], constituent_id)
             
             # Send email for different name
@@ -1470,7 +1470,7 @@ def update_linkedin(each_row, constituent_id):
         post_request_re(url, params)
         
         ## Update Tags
-        source = f"{each_row.loc[0]['Enter the source of your data?'].title()} - Auto | Online Presence"[:50]
+        source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Online Presence"[:50]
         add_tags(source, 'Sync Source', linkedin[:50], constituent_id)
 
 def send_mail_different_name(re_name, new_name, subject):
@@ -1540,6 +1540,45 @@ def send_mail_different_name(re_name, new_name, subject):
         imap.append('Sent', '\\Seen', imaplib.Time2Internaldate(time.time()), emailcontent.encode('utf8'))
         imap.logout()
 
+def check_if_new(each_row, constituent_id):
+    
+    logging.info('Checking if the record is a new record')
+    
+    # Get created data based on constituent code
+    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/constituentcodes/{constituent_id}'
+    params = {}
+    get_request_re(url, params)
+    
+    # Load to a DataFrame
+    re_data = api_to_df(re_api_response).copy()
+    
+    ## Convert to Datetime format
+    re_data['date_added'] = pd.to_datetime(re_data['date_added'], utc=True)
+    
+    # Sort DataFrame
+    re_data.sort_values(by=['date_added'], inplace=True)
+    re_data.reset_index(drop=True, inplace=True)
+    
+    created_date = re_data['date_added'][0]
+    
+    # Get Current Date
+    today = date.today().strftime("%m-%d-%Y")
+    today = date.today()
+    
+    # Date 7 Days ago
+    start_date = (today - timedelta(days=7))
+    
+    if today >= created_date >= start_date:
+        
+        # Constituent was recently created
+        
+        # Get source
+        source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | New Record"[:50]
+        
+        comment = re_data.loc[0]['description']
+        
+        ## Update Tags
+        add_tags(source, 'Sync source', str(comment)[:50], constituent_id)
 try:
     
     # Set current directory
@@ -1626,6 +1665,9 @@ try:
         
         # Update LinkedIn URL
         update_linkedin(each_row, constituent_id)
+        
+        # Check if the record is a new record
+        check_if_new(each_row, constituent_id)
         
         # Create database of file that's aready uploaded
         logging.info('Updating Database of synced records')

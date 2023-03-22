@@ -445,6 +445,7 @@ def sync_source(source):
             sync_source = str(source).split('-')[0].strip()
         except:
             sync_source = str(source).strip()
+        
         try:
             update_type = str(source).split('|')[1].strip().title() 
         except:
