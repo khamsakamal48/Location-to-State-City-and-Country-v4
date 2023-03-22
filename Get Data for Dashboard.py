@@ -454,17 +454,17 @@ def sync_source(source):
         sync_source = np.NaN
         update_type = np.NaN
     
-    if update_type == 'Email Address' or update_type == 'Primary Email Address':
+    if 'email' in str(update_type).lower():
         update_type = 'Email'
-    elif update_type == 'Phone Numbers' or update_type == 'Phone Number':
+    elif 'phone' in str(update_type).lower():
         update_type = 'Phone'
     elif update_type == 'Linkedin':
         update_type = 'Online Presence'
-    elif update_type == 'Employment - Org. Name' or update_type == 'Employment - Position':
+    elif 'employment' in str(update_type).lower() or 'org' in str(update_type).lower():
         update_type = 'Employment'
-    elif update_type == 'Address':
+    elif 'address' in str(update_type).lower() or 'location' in str(update_type).lower():
         update_type = 'Location'
-    elif update_type == 'Gender' or update_type == 'Gender & Title' or update_type == 'Name' or 'pan' in str(update_type).lower():
+    elif 'gender' in str(update_type).lower() or 'name' in str(update_type).lower() or 'pan' in str(update_type).lower() or 'bio' in str(update_type).lower():
         update_type = 'Bio Details'
     
     return sync_source, update_type
