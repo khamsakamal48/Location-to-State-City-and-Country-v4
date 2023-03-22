@@ -18,6 +18,18 @@ hide_streamlit_style = """
             """            
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+# Plotly Configuration
+plotly_config = {
+    'displaylogo': False,
+    'toImageButtonOptions': {
+        'format': 'png', # one of png, svg, jpeg, webp
+        'filename': 'custom_image',
+        'height': 1080,
+        'width': 1920,
+        'scale': 2 # Multiply title/legend/axis/canvas sizes by this factor
+    }
+}
+
 # Load the Parquet file into a Pandas dataframe
 @st.cache_data(ttl=43200) # Reset cache after 12 Hours
 def get_data():
@@ -148,9 +160,9 @@ fig.update_layout(
         x=1,
         title=dict(text='')
     ),
-    margin=dict(l=0, r=0, t=0, b=0)
+    margin=dict(l=0, r=0, t=70, b=0)
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, config=plotly_config)
 
 st.markdown("""---""")
 
@@ -185,9 +197,9 @@ line_chart.update_layout(
         x=1,
         title=dict(text='')
     ),
-    margin=dict(l=0, r=0, t=0, b=0)
+    margin=dict(l=0, r=0, t=70, b=0)
 )
-st.plotly_chart(line_chart, use_container_width=True)
+st.plotly_chart(line_chart, use_container_width=True, config=plotly_config)
 
 st.markdown("""---""")
 
@@ -263,7 +275,7 @@ pie_chart.update_layout(showlegend=False,
                         margin=dict(t=10, b=0, l=0, r=175),
                         # font=dict(size=13)
                         )
-col3.plotly_chart(pie_chart)
+col3.plotly_chart(pie_chart, config=plotly_config)
 
 st.markdown("""---""")
 st.markdown("##")
@@ -320,7 +332,7 @@ email_updates_breakdown_fig.update_layout(showlegend=True,
                         font=dict(size=13)
                         )
 
-col3.plotly_chart(email_updates_breakdown_fig)
+col3.plotly_chart(email_updates_breakdown_fig, config=plotly_config)
 
 # Define the sorting order
 order = {'Others': 0}
