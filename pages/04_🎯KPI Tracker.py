@@ -50,10 +50,14 @@ start_date = pd.Timestamp(start_date)
 end_date = pd.Timestamp(end_date)
 
 ## Create a sidebar filter for verified_source
+shortlisted_data = data.query(
+    "@start_date <= date <= @end_date"
+).reset_index(drop=True)
+
 verified_source = st.sidebar.multiselect(
     "Select the sources for verified contact details:",
-    options=data[data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique(),
-    default=data[data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique()
+    options=shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique(),
+    default=shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique()
 )
 
 verified_contacts = data.query(
@@ -77,8 +81,8 @@ verified_phone = "{:,}".format(verified_phone)
 ## Create a sidebar filter for verified_source
 sync_source = st.sidebar.multiselect(
     "Select the sources for updates:",
-    options=data['sync_source'].drop_duplicates().dropna().sort_values(),
-    default=data['sync_source'].drop_duplicates().dropna().sort_values()
+    options=shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values(),
+    default=shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values()
 )
 
 # Updates
