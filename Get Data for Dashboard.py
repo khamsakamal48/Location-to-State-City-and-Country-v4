@@ -384,6 +384,9 @@ def data_pre_processing():
     # Adding sync sources
     data[['sync_source', 'update_type']] = data[['value']].apply(lambda x: pd.Series(sync_source(x[0])), axis=1)
     
+    # Check if the value for Update Type = Email is infact an email
+    data['update_type'] = data[['update_type', 'comment']].apply(lambda x: check_if_email(*x), axis=1)
+    
     # Adding Type of Email
     data['comment'].fillna('', inplace=True)
     data['email_type'] = data['comment'].apply(lambda x: email_type(x))
@@ -398,7 +401,15 @@ def data_pre_processing():
 def extract_domain(email):
     
     try:
-        domain = email.split('@')[1]
+        
+        if '@' in email:
+            domain = str(email.split('@')[1]).lower().strip()
+            
+            if domain == '':
+                domain = np.NaN
+        
+        else:
+            domain = np.NaN
     except:
         domain = np.NaN
     
@@ -406,13 +417,18 @@ def extract_domain(email):
 
 def email_type(email):
     
-    iitb_emails = ['iitb.ac.in', 'sjmsom.in', 'iitbombay.org']
+    if '@' in email and not 'https://' in email:
     
-    if any(text in email for text in iitb_emails):
-        type = 'IITB Email'
-    
-    elif '@' in email:
-        type = 'Non-IITB Email'
+        iitb_emails = ['iitb.ac.in', 'sjmsom.in', 'iitbombay.org']
+        
+        if any(text in email for text in iitb_emails):
+            type = 'IITB Email'
+        
+        elif '@' in email:
+            type = 'Non-IITB Email'
+        
+        else:
+            type = np.NaN
     
     else:
         type = np.NaN
@@ -469,6 +485,22 @@ def sync_source(source):
         update_type = 'Bio Details'
     
     return sync_source, update_type
+
+def check_if_email(type, email):
+    
+    if type == 'Email':
+        
+        if 'https://' in email:
+            type = np.NaN
+            
+        else:
+            if '@' in email:
+                type = type
+            
+            else:
+                type = np.NaN
+    
+    return type
 
 try:
     
