@@ -308,7 +308,7 @@ col1.table(email_updates_type_breakdown.style.format(thousands=','))
 # Create a Sunburst chart
 
 # Group email domains by count and get top 5
-top_domains = email_updates_breakdown['email_domain'].value_counts().nlargest(5)
+top_domains = email_updates_breakdown['email_domain'].value_counts().nlargest(6)
 
 # Replace all other domains with 'Others'
 email_updates_breakdown.loc[~email_updates_breakdown['email_domain'].isin(top_domains.index), 'email_domain'] = 'Others'
