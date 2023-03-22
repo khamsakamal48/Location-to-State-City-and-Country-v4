@@ -268,7 +268,7 @@ hide_table_row_index = """
 col1.markdown(hide_table_row_index, unsafe_allow_html=True)
 
 col1.table(updates_breakdown.style.format(thousands=','))
-col1.write('The increased count is due to the fact there are constituents for whom multiple data features (email, phone, etc.) got updated for each row of records and hence there’s an overlap')
+col1.write('The reason for the higher number is because for each record there are multiple details (like email or phone number), and each of those data points got updated. So, some records are listed more than once because their information overlaps in multiple rows.')
 
 col2.write(' ')
 
@@ -285,7 +285,8 @@ st.markdown("""---""")
 st.markdown("##")
 st.markdown('##### Email Updates Breakdown')
 
-email_updates_breakdown = updates[updates['email_type'].notnull()].reset_index(drop=True)
+# email_updates_breakdown = updates[(updates['email_type'].notnull()) & (updates['update_type'] == 'Email')].reset_index(drop=True)
+email_updates_breakdown = updates[(updates['update_type'] == 'Email')].reset_index(drop=True)
 email_updates_breakdown = email_updates_breakdown.copy()
 
 email_updates_type_breakdown = email_updates_breakdown.groupby(
@@ -350,3 +351,4 @@ email_updates_breakdown_grouped.drop(columns=['sorting_value'], inplace=True)
 col1.write('###')
 col1.table(email_updates_breakdown_grouped.style.format(thousands=','))
 col2.write(' ')
+st.write('The increased count is due to the fact that multiple email address type(s) got updated for each record and hence it is counted more than once.')
