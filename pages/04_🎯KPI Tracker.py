@@ -285,8 +285,7 @@ st.markdown("""---""")
 st.markdown("##")
 st.markdown('##### Email Updates Breakdown')
 
-# email_updates_breakdown = updates[(updates['email_type'].notnull()) & (updates['update_type'] == 'Email')].reset_index(drop=True)
-email_updates_breakdown = updates[(updates['update_type'] == 'Email')].reset_index(drop=True)
+email_updates_breakdown = updates[(updates['email_type'].notnull()) & (updates['update_type'] == 'Email')].reset_index(drop=True)
 email_updates_breakdown = email_updates_breakdown.copy()
 
 email_updates_type_breakdown = email_updates_breakdown.groupby(
