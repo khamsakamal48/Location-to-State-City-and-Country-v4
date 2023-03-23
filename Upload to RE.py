@@ -1545,7 +1545,7 @@ def check_if_new(each_row, constituent_id):
     logging.info('Checking if the record is a new record')
     
     # Get created data based on constituent code
-    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/constituentcodes/{constituent_id}'
+    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/constituentcodes'
     params = {}
     get_request_re(url, params)
     
