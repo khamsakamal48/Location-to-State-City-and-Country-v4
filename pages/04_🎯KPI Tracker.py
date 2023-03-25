@@ -206,7 +206,47 @@ line_chart.update_layout(
 st.plotly_chart(line_chart, use_container_width=True, config=plotly_config)
 
 st.markdown("""---""")
+st.markdown('## Data Update Comparison')
 
+data_update_comparison = pd.pivot_table(updates, index=['update_type'], columns=['sync_source'], values='parent_id', aggfunc='count')
+
+# Rename column index
+data_update_comparison.index.names = ['Updates']
+
+st.dataframe(data_update_comparison, use_container_width=True)
+
+# Stacked Bar Chart
+# Convert DataFrame to long format
+data_update_comparison_long = pd.melt(data_update_comparison.reset_index(), id_vars=['Updates'], var_name='sync_source', value_name='count')
+
+# Create stacked bar chart using Plotly Express
+stacked_bar_chart = px.bar(
+    data_update_comparison_long,
+    x='sync_source', y='count', color='Updates', barmode='stack'
+)
+
+# Add axis labels and title
+stacked_bar_chart.update_layout(
+    xaxis_title='',
+    yaxis_title='Updates',
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1,
+        title=dict(text='')
+    ),
+    margin=dict(l=0, r=0, t=70, b=0)
+)
+
+stacked_bar_chart.update_traces(textposition='auto')
+
+# Show the chart
+st.plotly_chart(stacked_bar_chart, use_container_width=True, onfig=plotly_config)
+
+
+st.markdown("""---""")
 # Row D
 st.markdown('## Data Update Breakdown')
 
