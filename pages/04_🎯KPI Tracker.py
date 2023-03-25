@@ -243,7 +243,7 @@ stacked_bar_chart.update_layout(
 stacked_bar_chart.update_traces(textposition='auto')
 
 # Show the chart
-st.plotly_chart(stacked_bar_chart, use_container_width=True, onfig=plotly_config)
+st.plotly_chart(stacked_bar_chart, use_container_width=True, config=plotly_config)
 
 
 st.markdown("""---""")
