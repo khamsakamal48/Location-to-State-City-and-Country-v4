@@ -250,34 +250,6 @@ st.markdown("""---""")
 # Row D
 st.markdown('## Data Update Breakdown')
 
-# Set table style
-table_style = """
-<style>
-    table {
-        width: 100%;
-    }
-    th {
-        background-color: #4285f4;
-        color: white;
-        text-align: left;
-    }
-    th, td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
-    th:first-child, td:first-child {
-        width: 25%;
-    }
-    th:last-child, td:last-child {
-        width: 75%;
-    }
-    tr:hover {
-        background-color: #f5f5f5;
-    }
-</style>
-"""
-
 updates_breakdown = updates.groupby(
     by=['update_type']).nunique()['parent_id'].reset_index().rename(
         columns={
@@ -292,31 +264,20 @@ st.markdown("##")
 st.markdown('##### Updates Breakdown')
 col1, col2, col3 = st.columns([2, 0.5, 2])
 
-# CSS to inject contained in a string
-hide_table_row_index = """
-            <style>
-            thead tr th:first-child {display:none}
-            tbody th {display:none}
-            .streamlit-container {
-                width: 100%;
-            }
-            </style>
-            """
+updates_breakdown.reset_index(drop=True, inplace=True)
 
+updates_breakdown_table = updates_breakdown.set_index('Description')
 
-# Inject CSS with Markdown
-col1.markdown(hide_table_row_index, unsafe_allow_html=True)
+col1.dataframe(updates_breakdown_table, use_container_width=True)
 
-col1.table(updates_breakdown.style.format(thousands=','))
-col1.write('The reason for the higher number is because for each record there are multiple details (like email or phone number), and each of those data points got updated. So, some records are listed more than once because their information overlaps in multiple rows.')
-
-col2.write(' ')
+text = 'The reason for the higher number is because for each record there are multiple details (like email or phone number), and each of those data points got updated. So, some records are listed more than once because their information overlaps in multiple rows.'
+col1.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
 
 # Pie Chart
 pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'], title='', color=np.log10(updates_breakdown['Updates']))
 pie_chart.update_traces(textposition='outside', textinfo='percent+label')
 pie_chart.update_layout(showlegend=False,
-                        margin=dict(t=10, b=0, l=0, r=175),
+                        margin=dict(t=15, b=0, l=0, r=175),
                         # font=dict(size=13)
                         )
 col3.plotly_chart(pie_chart, config=plotly_config)
@@ -340,10 +301,10 @@ email_updates_type_breakdown = email_updates_type_breakdown.sort_values(by=['Des
 
 col1, col2, col3 = st.columns([2, 0.5, 2])
 
-# Inject CSS with Markdown
-col1.markdown(hide_table_row_index, unsafe_allow_html=True)
+email_updates_type_breakdown_table = email_updates_type_breakdown.copy().reset_index(drop=True)
+email_updates_type_breakdown_table.set_index('Description', inplace=True)
 
-col1.table(email_updates_type_breakdown.style.format(thousands=','))
+col1.dataframe(email_updates_type_breakdown_table, use_container_width=True)
 
 # Create a Sunburst chart
 
@@ -388,6 +349,11 @@ email_updates_breakdown_grouped.sort_values(['Description', 'sorting_value', 'Co
 email_updates_breakdown_grouped.drop(columns=['sorting_value'], inplace=True)
 
 col1.write('###')
-col1.table(email_updates_breakdown_grouped.style.format(thousands=','))
+
+email_updates_breakdown_grouped.reset_index(drop=True, inplace=True)
+email_updates_breakdown_grouped.set_index('Description', inplace=True)
+
+col1.dataframe(email_updates_breakdown_grouped, use_container_width=True)
 col2.write(' ')
-st.write('The increased count is due to the fact that multiple email address type(s) got updated for each record and hence it is counted more than once.')
+text = 'The increased count is due to the fact that multiple email address type(s) got updated for each record and hence it is counted more than once.'
+st.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
