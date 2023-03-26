@@ -394,6 +394,15 @@ def data_pre_processing():
     # Extracting domain of email address
     data['email_domain'] = data['comment'].apply(lambda x: extract_domain(x))
     
+    # Checking if new record is an Alum
+    data['update_type'] = data[['update_type', 'comment']].apply(lambda x: identify_new_record(*x), axis=1)
+    
+    # Get city, state and country from the Form
+    data['parent_id'] = data['parent_id'].astype(int)
+    form_data = pd.read_excel('Databases/Database Update Form.xlsx')
+    data = pd.merge(left=data, right=form_data[['System Record ID', 'City', 'State', 'Country']].drop_duplicates(), left_on='parent_id', right_on='System Record ID', how='left')
+    data.drop(columns=['System Record ID'], inplace=True)
+    
     # export from dataframe to parquet
     data.to_parquet('Databases/Custom Fields', index=False)
 
@@ -501,6 +510,21 @@ def check_if_email(type, email):
                 type = np.NaN
     
     return type
+
+def identify_new_record(update_type, type):
+    
+    if update_type == 'New Record':
+        
+        if 'alum' in str(type).lower():
+            update_type = 'New Alums'
+        
+        else:
+            update_type = update_type
+        
+    else:
+        update_type = update_type
+        
+    return update_type
 
 try:
     
