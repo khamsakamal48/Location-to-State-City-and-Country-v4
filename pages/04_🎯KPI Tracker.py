@@ -31,7 +31,7 @@ plotly_config = {
 }
 
 # Load the Parquet file into a Pandas dataframe
-@st.cache_data(ttl=43200) # Reset cache after 12 Hours
+@st.cache_data(ttl=3600) # Reset cache every 1 Hour
 def get_data():
     data = pd.read_parquet('Databases/Custom Fields')
     # Reset the index so that the date column becomes a regular column
