@@ -50,9 +50,10 @@ start_date = pd.Timestamp(start_date)
 end_date = pd.Timestamp(end_date)
 
 ## Create a sidebar filter for verified_source
-shortlisted_data = data.query(
-    "@start_date <= date <= @end_date"
-).reset_index(drop=True)
+# shortlisted_data = data.query(
+#     "@start_date <= date <= @end_date"
+# ).reset_index(drop=True)
+shortlisted_data = data[data['date'].between(start_date, end_date)].reset_index(drop=True)
 
 verified_source = st.sidebar.multiselect(
     "Select the sources for verified contact details:",
@@ -60,9 +61,10 @@ verified_source = st.sidebar.multiselect(
     default=shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique()
 )
 
-verified_contacts = data.query(
-    "verified_source == @verified_source and @start_date <= date <= @end_date"
-).reset_index(drop=True)
+# verified_contacts = data.query(
+#     "verified_source == @verified_source and @start_date <= date <= @end_date"
+# ).reset_index(drop=True)
+verified_contacts = data[(data['date'].between(start_date, end_date)) & (data['verified_source'] == verified_source)].reset_index(drop=True)
 
 # Verified Emails
 # Getting the count for metrics
@@ -86,9 +88,11 @@ sync_source = st.sidebar.multiselect(
 )
 
 # Updates
-updates = data.query(
-    "sync_source == @sync_source and @start_date <= date <= @end_date and sync_source.notnull()"
-).reset_index(drop=True)
+# updates = data.query(
+#     "sync_source == @sync_source and @start_date <= date <= @end_date and sync_source.notnull()"
+# ).reset_index(drop=True)
+updates = data[(data['date'].between(start_date, end_date)) & (data['sync_source'] == sync_source) & (data['sync_source'].notnull())].reset_index(drop=True)
+
 
 ## Email Updates
 email_updates = updates[updates['update_type'] == 'Email']['parent_id'].nunique()
@@ -357,3 +361,12 @@ col1.dataframe(email_updates_breakdown_grouped, use_container_width=True)
 col2.write(' ')
 text = 'The increased count is due to the fact that multiple email address type(s) got updated for each record and hence it is counted more than once.'
 st.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
+
+# Location Updates
+st.markdown("""---""")
+st.markdown("##")
+st.markdown('##### Location Updates Breakdown')
+
+location_updates = updates[updates['update_type'] == 'Location'].reset_index(drop=True)
+
+st.dataframe(location_updates.head())
