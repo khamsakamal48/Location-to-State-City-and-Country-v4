@@ -211,7 +211,7 @@ st.plotly_chart(line_chart, use_container_width=True, config=plotly_config)
 st.markdown("""---""")
 st.markdown('## Data Update Comparison')
 
-data_update_comparison = pd.pivot_table(updates, index=['update_type'], columns=['sync_source'], values='parent_id', aggfunc='count')
+data_update_comparison = pd.pivot_table(updates, index=['update_type'], columns=['sync_source'], values='parent_id', aggfunc=pd.Series.nunique)
 
 # Rename column index
 data_update_comparison.index.names = ['Updates']
