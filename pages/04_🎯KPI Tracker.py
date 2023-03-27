@@ -49,22 +49,22 @@ end_date = st.sidebar.date_input("End date", value=data['date'].max())
 start_date = pd.Timestamp(start_date)
 end_date = pd.Timestamp(end_date)
 
-## Create a sidebar filter for verified_source
-# shortlisted_data = data.query(
-#     "@start_date <= date <= @end_date"
-# ).reset_index(drop=True)
+# Shortlist data based on Date
 shortlisted_data = data[data['date'].between(start_date, end_date)].reset_index(drop=True)
 
-verified_source = st.sidebar.multiselect(
-    "Select the sources for verified contact details:",
-    options=shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique(),
-    default=shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique()
+# Get various sources
+verified_source = shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].dropna().drop_duplicates().sort_values().reset_index(drop=True)
+sync_source = shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values()
+
+# Combine different sources to one
+sources = st.sidebar.multiselect(
+    "Select the sources:",
+    options=pd.concat([verified_source, sync_source]).drop_duplicates().reset_index(drop=True),
+    default=pd.concat([verified_source, sync_source]).drop_duplicates().reset_index(drop=True)
 )
 
-verified_contacts = data.query(
-    "verified_source == @verified_source and @start_date <= date <= @end_date"
-).reset_index(drop=True)
-# verified_contacts = data[(data['date'].between(start_date, end_date)) & (data['verified_source'] == verified_source)].reset_index(drop=True)
+# Get Verified contact details
+verified_contacts = data[(data['date'].between(start_date, end_date)) & (data['verified_source'].isin(sources))].reset_index(drop=True)
 
 # Verified Emails
 # Getting the count for metrics
@@ -80,18 +80,8 @@ verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Ph
 ## Formatting it as proper readable numbers
 verified_phone = "{:,}".format(verified_phone)
 
-## Create a sidebar filter for verified_source
-sync_source = st.sidebar.multiselect(
-    "Select the sources for updates:",
-    options=shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values(),
-    default=shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values()   
-)
-
 # Updates
-updates = data.query(
-    "sync_source == @sync_source and @start_date <= date <= @end_date and sync_source.notnull()"
-).reset_index(drop=True)
-# updates = data[(data['date'].between(start_date, end_date)) & (data['sync_source'] == sync_source)].reset_index(drop=True)
+updates = data[(data['date'].between(start_date, end_date)) & (data['sync_source'].isin(sources))].reset_index(drop=True)
 
 ## Email Updates
 email_updates = updates[updates['update_type'] == 'Email']['parent_id'].nunique()
