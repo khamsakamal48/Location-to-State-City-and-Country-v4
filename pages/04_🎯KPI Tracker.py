@@ -61,10 +61,10 @@ verified_source = st.sidebar.multiselect(
     default=shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].sort_values().unique()
 )
 
-# verified_contacts = data.query(
-#     "verified_source == @verified_source and @start_date <= date <= @end_date"
-# ).reset_index(drop=True)
-verified_contacts = data[(data['date'].between(start_date, end_date)) & (data['verified_source'] == verified_source)].reset_index(drop=True)
+verified_contacts = data.query(
+    "verified_source == @verified_source and @start_date <= date <= @end_date"
+).reset_index(drop=True)
+# verified_contacts = data[(data['date'].between(start_date, end_date)) & (data['verified_source'] == verified_source)].reset_index(drop=True)
 
 # Verified Emails
 # Getting the count for metrics
@@ -84,15 +84,14 @@ verified_phone = "{:,}".format(verified_phone)
 sync_source = st.sidebar.multiselect(
     "Select the sources for updates:",
     options=shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values(),
-    default=shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values()
+    default=shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values()   
 )
 
 # Updates
-# updates = data.query(
-#     "sync_source == @sync_source and @start_date <= date <= @end_date and sync_source.notnull()"
-# ).reset_index(drop=True)
-updates = data[(data['date'].between(start_date, end_date)) & (data['sync_source'] == sync_source) & (data['sync_source'].notnull())].reset_index(drop=True)
-
+updates = data.query(
+    "sync_source == @sync_source and @start_date <= date <= @end_date and sync_source.notnull()"
+).reset_index(drop=True)
+# updates = data[(data['date'].between(start_date, end_date)) & (data['sync_source'] == sync_source)].reset_index(drop=True)
 
 ## Email Updates
 email_updates = updates[updates['update_type'] == 'Email']['parent_id'].nunique()
