@@ -362,10 +362,10 @@ text = 'The increased count is due to the fact that multiple email address type(
 st.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
 
 # Location Updates
-st.markdown("""---""")
-st.markdown("##")
-st.markdown('##### Location Updates Breakdown')
+# st.markdown("""---""")
+# st.markdown("##")
+# st.markdown('##### Location Updates Breakdown')
 
-location_updates = updates[updates['update_type'] == 'Location'].reset_index(drop=True)
+# location_updates = updates[updates['update_type'] == 'Location'].reset_index(drop=True)
 
-st.dataframe(location_updates.head())
+# st.dataframe(location_updates.head())
