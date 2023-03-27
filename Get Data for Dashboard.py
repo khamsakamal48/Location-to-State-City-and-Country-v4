@@ -343,9 +343,7 @@ def load_from_json_to_parquet():
             
             df = pd.concat([df, df_])
     
-    # export from dataframe to parquet
-    logging.info('Loading DataFrame to file')
-    df.to_parquet('Databases/Custom Fields', index=False)
+    return df
 
 def convert_to_strings(obj):
     """
@@ -366,7 +364,11 @@ def get_custom_fields():
     pagination_api_request(url, params)
     
     # Load to Dataframe
-    load_from_json_to_parquet()
+    df = load_from_json_to_parquet().copy()
+    
+    # export from dataframe to parquet
+    logging.info('Loading DataFrame to file')
+    df.to_parquet('Databases/Custom Fields', index=False)
 
 def data_pre_processing():
     
@@ -397,11 +399,14 @@ def data_pre_processing():
     # Checking if new record is an Alum
     data['update_type'] = data[['update_type', 'comment']].apply(lambda x: identify_new_record(*x), axis=1)
     
-    # Get city, state and country from the Form
+    # Get city, state and country from the Address List
     data['parent_id'] = data['parent_id'].astype(int)
-    form_data = pd.read_excel('Databases/Form Responses.xlsx')
-    data = pd.merge(left=data, right=form_data[['System Record ID', 'City', 'State', 'Country']].drop_duplicates(), left_on='parent_id', right_on='System Record ID', how='left')
-    data.drop(columns=['System Record ID'], inplace=True)
+    
+    address_data = pd.read_parquet('Databases/Address List')
+    address_data['constituent_id'] = address_data['constituent_id'].astype(int)
+    
+    data = pd.merge(left=data, right=address_data[['constituent_id', 'city', 'county', 'country']].drop_duplicates(), left_on='parent_id', right_on='constituent_id', how='left')
+    data.drop(columns=['constituent_id'], inplace=True)
     
     # export from dataframe to parquet
     data.to_parquet('Databases/Custom Fields', index=False)
@@ -526,6 +531,24 @@ def identify_new_record(update_type, type):
         
     return update_type
 
+def get_addresses():
+    
+    url = 'https://api.sky.blackbaud.com/constituent/v1/addresses?limit=5000'
+    params = {}
+    
+    pagination_api_request(url, params)
+    
+    # Load to Dataframe
+    df = load_from_json_to_parquet().copy()
+    
+    # Sort by preferred address
+    df = df[df['preferred'] == 'True']
+    df = df.copy()
+    
+    # export from dataframe to parquet
+    logging.info('Loading Address DataFrame to file')
+    df.to_parquet('Databases/Address List', index=False)
+
 try:
     
     # Set current directory
@@ -545,6 +568,12 @@ try:
     
     # Get Custom fields data of all constituent
     get_custom_fields()
+    
+    # Housekeeping
+    housekeeping()
+    
+    # Get Address data of all constituent
+    get_addresses()
     
     # Data Pre-processing
     data_pre_processing()
