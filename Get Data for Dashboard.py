@@ -458,9 +458,9 @@ def verified_sources(category, comment):
         
         else:
             try:
-                output = str(comment).split('-')[0].strip().title()
+                output = str(comment).split('-')[0].strip()
             except:
-                output = str(comment).strip().title()
+                output = str(comment).strip()
     else:
         output = np.NaN
     
