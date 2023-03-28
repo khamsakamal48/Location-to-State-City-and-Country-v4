@@ -54,7 +54,7 @@ shortlisted_data = data[data['date'].between(start_date, end_date)].reset_index(
 
 # Get various sources
 verified_source = shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].dropna().drop_duplicates().sort_values().reset_index(drop=True)
-sync_source = shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values()
+sync_source = shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values().reset_index(drop=True)
 
 # Combine different sources to one
 sources = st.sidebar.multiselect(
@@ -352,10 +352,10 @@ text = 'The increased count is due to the fact that multiple email address type(
 st.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
 
 # Location Updates
-st.markdown("""---""")
-st.markdown("##")
-st.markdown('##### Location Updates Breakdown')
+# st.markdown("""---""")
+# st.markdown("##")
+# st.markdown('##### Location Updates Breakdown')
 
-location_updates = updates[updates['update_type'] == 'Location'].reset_index(drop=True)
+# location_updates = updates[updates['update_type'] == 'Location'].reset_index(drop=True)
 
-st.dataframe(location_updates.head())
+# st.dataframe(location_updates.head())
