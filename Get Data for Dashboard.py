@@ -456,11 +456,11 @@ def verified_sources(category, comment):
         if comment == 'verified using RE appeal data':
             output = 'RE Email Engagement - Open rate'
         
-        else:
-            try:
-                output = str(comment).split('-')[0].strip()
-            except:
-                output = str(comment).strip()
+        try:
+            output = str(comment).split('-')[0].strip()
+        except:
+            output = str(comment).strip()
+            
     else:
         output = np.NaN
     
