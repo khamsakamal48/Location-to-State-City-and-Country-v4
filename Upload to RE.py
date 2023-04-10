@@ -496,8 +496,8 @@ def update_emails(each_row, constituent_id):
     # Get Data source (Limiting to 50 characters)
     source = f"{each_row['Enter the source of your data?'][0].title().replace('-', '_')} - Auto | Email"[:50]
     
-    # Check if there's any new email address to add and that the existing email address (to be updated) is not empty
-    if len(missing_values) == 0 and not pd.isna(each_row.loc[0]['Email 1']):
+    # Check if there's any new email address to add and that the existing email address (to be updated) is not empty and that the source is not Live Alumni
+    if len(missing_values) == 0 and not pd.isna(each_row.loc[0]['Email 1']) and each_row['Enter the source of your data?'][0].title() != 'Live Alumni':
         
         ## Mark existing email as primary
         email = each_row['Email 1'][0]
