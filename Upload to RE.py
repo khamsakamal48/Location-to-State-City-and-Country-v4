@@ -526,13 +526,23 @@ def update_emails(each_row, constituent_id):
             
             else:
                 email_type = 'Email'
-            
-            params = {
+
+            # Check if the source is Live Alumni
+            if each_row['Enter the source of your data?'][0].title() == 'Live Alumni':
+
+                params = {
                     'address': email,
                     'constituent_id': constituent_id,
-                    'primary': True,
                     'type': email_type
                 }
+
+            else:
+                params = {
+                        'address': email,
+                        'constituent_id': constituent_id,
+                        'primary': True,
+                        'type': email_type
+                    }
             
             url = 'https://api.sky.blackbaud.com/constituent/v1/emailaddresses'
             
@@ -543,9 +553,10 @@ def update_emails(each_row, constituent_id):
             
             ## Update Tags
             add_tags(source, 'Sync source', email, constituent_id)
-            
+
             ## Verified Tags
-            add_tags(email, 'Verified Email', source, constituent_id)
+            if each_row['Enter the source of your data?'][0].title() != 'Live Alumni':
+                add_tags(email, 'Verified Email', source, constituent_id)
             
         else:
             
@@ -563,7 +574,7 @@ def update_emails(each_row, constituent_id):
                 else:
                     email_type = 'Email'
                 
-                if i == 0:
+                if i == 0 and 'Live Alumni' not in source:
                     params = {
                         'address': email,
                         'constituent_id': constituent_id,
@@ -591,7 +602,8 @@ def update_emails(each_row, constituent_id):
                 add_tags(source, 'Sync source', email, constituent_id)
                 
                 ## Verified Tags
-                add_tags(email, 'Verified Email', source, constituent_id)
+                if 'Live Alumni' not in source:
+                    add_tags(email, 'Verified Email', source, constituent_id)
 
 def update_phones(each_row, constituent_id):
     
@@ -645,7 +657,7 @@ def update_phones(each_row, constituent_id):
     source = f"{each_row.loc[0]['Enter the source of your data?'].title().replace('-', '_')} - Auto | Phone"[:50]
     
     # Check if there's any new phone number to add and that the existing phone number (to be updated) is not empty
-    if missing_values == [] and not pd.isna(each_row.loc[0]['Phone number 1']):
+    if missing_values == [] and not pd.isna(each_row.loc[0]['Phone number 1']) and each_row.loc[0]['Enter the source of your data?'].title() != 'Live Alumni':
         
         logging.info(re_data_unformatted)
         # Mark existing phone number as primary
@@ -686,7 +698,7 @@ def update_phones(each_row, constituent_id):
             
             if len(str(phone)) != 0:
             
-                if i == 0:
+                if i == 0 and each_row.loc[0]['Enter the source of your data?'].title() != 'Live Alumni':
                     
                     params = {
                         'number': phone,
@@ -714,7 +726,8 @@ def update_phones(each_row, constituent_id):
                 add_tags(source, 'Sync source', phone, constituent_id)
                 
                 ## Verified Tags
-                add_tags(phone, 'Verified Phone', source, constituent_id)
+                if each_row.loc[0]['Enter the source of your data?'].title() != 'Live Alumni':
+                    add_tags(phone, 'Verified Phone', source, constituent_id)
 
 def update_employment(each_row, constituent_id):
     
