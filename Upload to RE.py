@@ -1687,9 +1687,9 @@ try:
         data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
         data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
         
-        # Sleep for 60 seconds
-        logging.info('Sleeping for 60 seconds')
-        time.sleep(60)
+        # Sleep for 5 seconds
+        logging.info('Sleeping for 5 seconds')
+        time.sleep(5)
     
     # Check for errors
     with open(f'Logs/{process_name}.log') as log:
