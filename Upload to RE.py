@@ -1651,6 +1651,8 @@ try:
     for index, each_row in new_data.iterrows():
         
         each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
+
+        global each_row_bak
         each_row_bak = each_row.copy()
         
         # Get RE ID
@@ -1682,7 +1684,7 @@ try:
         # Check if the record is a new record
         check_if_new(each_row, constituent_id)
         
-        # Create database of file that's aready uploaded
+        # Create database of file that's already uploaded
         logging.info('Updating Database of synced records')
         data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
         data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
@@ -1701,6 +1703,14 @@ except Exception as Argument:
     logging.error(Argument)
     
     send_error_emails('Error while uploading data to RE | Database Update Form-Model')
+
+    try:
+        error_file = pd.read_csv('Databases/Data not uploaded.csv')
+        each_row_bak = pd.concat([error_file, each_row_bak], axis=0,  ignore_index=True)
+    except:
+        each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, line_terminator='\r\n', quoting=1)
+
+    pass
 
 finally:
     
