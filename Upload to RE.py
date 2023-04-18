@@ -1648,50 +1648,62 @@ try:
     new_data = pd.DataFrame(find_remaining_data(form_data, data_uploaded))
     
     # Upload data to RE
-    for index, each_row in new_data.iterrows():
-        
-        each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
+    try:
+        for index, each_row in new_data.iterrows():
 
-        global each_row_bak
-        each_row_bak = each_row.copy()
-        
-        # Get RE ID
-        constituent_id = int(each_row['System Record ID'])
-        
-        logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
-        
-        ## Update Email Addresses
-        update_emails(each_row, constituent_id)
-        
-        ## Update Phone Numbers
-        update_phones(each_row, constituent_id)
-        
-        ## Update Employment
-        update_employment(each_row, constituent_id)
-        
-        ## Update Address
-        update_address(each_row, constituent_id)
-        
-        ## Update Education
-        update_education(each_row, constituent_id)
-        
-        ## Update Name
-        update_name(each_row, constituent_id)
-        
-        # Update LinkedIn URL
-        update_linkedin(each_row, constituent_id)
-        
-        # Check if the record is a new record
-        check_if_new(each_row, constituent_id)
-        
-        # Create database of file that's already uploaded
-        logging.info('Updating Database of synced records')
-        data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
-        data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
-        
-        # Sleep for 5 seconds
-        logging.info('Sleeping for 5 seconds')
-        time.sleep(5)
+            each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
+
+            each_row_bak = each_row.copy()
+
+            # Get RE ID
+            constituent_id = int(each_row['System Record ID'])
+
+            logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
+
+            ## Update Email Addresses
+            update_emails(each_row, constituent_id)
+
+            ## Update Phone Numbers
+            update_phones(each_row, constituent_id)
+
+            ## Update Employment
+            update_employment(each_row, constituent_id)
+
+            ## Update Address
+            update_address(each_row, constituent_id)
+
+            ## Update Education
+            update_education(each_row, constituent_id)
+
+            ## Update Name
+            update_name(each_row, constituent_id)
+
+            # Update LinkedIn URL
+            update_linkedin(each_row, constituent_id)
+
+            # Check if the record is a new record
+            check_if_new(each_row, constituent_id)
+
+            # Create database of file that's already uploaded
+            logging.info('Updating Database of synced records')
+            data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
+            data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
+
+            # Sleep for 5 seconds
+            logging.info('Sleeping for 5 seconds')
+            time.sleep(5)
+
+    except:
+
+        try:
+            error_file = pd.read_csv('Databases/Data not uploaded.csv')
+            each_row_bak = pd.concat([error_file, each_row_bak], axis=0,  ignore_index=True)
+            each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
+
+        except:
+            each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
+
+        pass
     
     # Check for errors
     with open(f'Logs/{process_name}.log') as log:
@@ -1703,14 +1715,6 @@ except Exception as Argument:
     logging.error(Argument)
     
     send_error_emails('Error while uploading data to RE | Database Update Form-Model')
-
-    try:
-        error_file = pd.read_csv('Databases/Data not uploaded.csv')
-        each_row_bak = pd.concat([error_file, each_row_bak], axis=0,  ignore_index=True)
-    except:
-        each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, line_terminator='\r\n', quoting=1)
-
-    pass
 
 finally:
     
