@@ -1648,17 +1648,18 @@ try:
     new_data = pd.DataFrame(find_remaining_data(form_data, data_uploaded))
     
     # Upload data to RE
-    try:
-        for index, each_row in new_data.iterrows():
+    for index, each_row in new_data.iterrows():
 
-            each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
+        each_row = pd.DataFrame(each_row).T.reset_index(drop=True)
 
-            each_row_bak = each_row.copy()
+        each_row_bak = each_row.copy()
 
-            # Get RE ID
-            constituent_id = int(each_row['System Record ID'])
+        # Get RE ID
+        constituent_id = int(each_row['System Record ID'])
 
-            logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
+        logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
+
+        try:
 
             ## Update Email Addresses
             update_emails(each_row, constituent_id)
@@ -1693,22 +1694,22 @@ try:
             # logging.info('Sleeping for 5 seconds')
             # time.sleep(5)
 
-    except:
-
-        try:
-            error_file = pd.read_csv('Databases/Data not uploaded.csv')
-            each_row_bak = pd.concat([error_file, each_row_bak], axis=0,  ignore_index=True)
-            each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
+            # Check for errors
+            with open(f'Logs/{process_name}.log') as log:
+                contents = log.read()
+                check_errors(contents)
 
         except:
-            each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
 
-        pass
-    
-    # Check for errors
-    with open(f'Logs/{process_name}.log') as log:
-        contents = log.read()
-        check_errors(contents)
+            try:
+                error_file = pd.read_csv('Databases/Data not uploaded.csv')
+                each_row_bak = pd.concat([error_file, each_row_bak], axis=0,  ignore_index=True)
+                each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
+
+            except:
+                each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
+
+            pass
 
 except Exception as Argument:
     
