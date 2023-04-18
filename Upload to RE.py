@@ -1694,11 +1694,6 @@ try:
             # logging.info('Sleeping for 5 seconds')
             # time.sleep(5)
 
-            # Check for errors
-            with open(f'Logs/{process_name}.log') as log:
-                contents = log.read()
-                check_errors(contents)
-
         except:
 
             try:
@@ -1710,6 +1705,11 @@ try:
                 each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
 
             pass
+
+    # Check for errors
+    with open(f'Logs/{process_name}.log') as log:
+        contents = log.read()
+        check_errors(contents)
 
 except Exception as Argument:
     
