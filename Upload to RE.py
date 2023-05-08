@@ -298,9 +298,9 @@ def get_request_re(url, params):
     
     check_errors(re_api_response)
     
-    # # Sleep for 5 seconds
-    # logging.info('Sleeping for 5 seconds')
-    # time.sleep(5)
+    # Sleep for 5 seconds
+    logging.info('Sleeping for 5 seconds')
+    time.sleep(5)
 
 def post_request_re(url, params):
     
@@ -324,9 +324,9 @@ def post_request_re(url, params):
     
     check_errors(re_api_response)
     
-    # # Sleep for 5 seconds
-    # logging.info('Sleeping for 5 seconds')
-    # time.sleep(5)
+    # Sleep for 5 seconds
+    logging.info('Sleeping for 5 seconds')
+    time.sleep(5)
 
 def patch_request_re(url, params):
     
@@ -350,9 +350,9 @@ def patch_request_re(url, params):
     
     check_errors(re_api_response)
     
-    # # Sleep for 5 seconds
-    # logging.info('Sleeping for 5 seconds')
-    # time.sleep(5)
+    # Sleep for 5 seconds
+    logging.info('Sleeping for 5 seconds')
+    time.sleep(5)
 
 def add_county(county):
     
@@ -1690,9 +1690,9 @@ try:
             data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
             data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
 
-            # # Sleep for 5 seconds
-            # logging.info('Sleeping for 5 seconds')
-            # time.sleep(5)
+            # Sleep for 5 seconds
+            logging.info('Sleeping for 5 seconds')
+            time.sleep(5)
 
         except:
 
