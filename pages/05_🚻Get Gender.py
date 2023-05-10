@@ -21,7 +21,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # Add title and description to app
 st.title(':transgender_symbol: Gender Identifier')
 st.markdown("##")
-st.write('##### Enter a name to predict the gender of the person.')
+st.write('##### Enter First name to predict the gender of the person.')
 
 #word encoding
 maxlen = 20                                               # max length of a name
@@ -106,7 +106,7 @@ name = st.text_input("First Name")
 
 # Else
 st.markdown("##")
-st.write('##### Else, upload names as per the template to do bulk predictions.')
+st.write('##### Else, upload first names as per the template to do bulk predictions.')
 # Add file uploader for CSV file
 uploaded_file = st.file_uploader("Upload a CSV file", type="csv")
 st.markdown("##")
