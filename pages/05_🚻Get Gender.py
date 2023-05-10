@@ -112,17 +112,24 @@ uploaded_file = st.file_uploader("Upload a CSV file", type="csv")
 st.markdown("##")
 
 def predict_gender(name):
-    try:
-        name = name.lower()
-        name = prepare_encod_names([name])  # Now the names are encod as a vector of numbers with weight
-        resu = (loaded_model.predict(name) > 0.5).astype("int32")
-        if int(resu) == 1:
-            return ('Male')
-        else:
-            return ('Female')
-
-    except:
-        return ('Unknown')
+    name = str(name).lower()
+    name = prepare_encod_names([name])  # Now the names are encod as a vector of numbers with weight
+    resu = (loaded_model.predict(name) > 0.5).astype("int32")
+    if int(resu) == 1:
+        return ('Male')
+    else:
+        return ('Female')
+    # try:
+    #     name = name.lower()
+    #     name = prepare_encod_names([name])  # Now the names are encod as a vector of numbers with weight
+    #     resu = (loaded_model.predict(name) > 0.5).astype("int32")
+    #     if int(resu) == 1:
+    #         return ('Male')
+    #     else:
+    #         return ('Female')
+    #
+    # except:
+    #     return ('Unknown')
 
 if st.button("Predict"):
     if name:
