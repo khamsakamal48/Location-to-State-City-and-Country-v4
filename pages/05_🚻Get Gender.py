@@ -66,16 +66,6 @@ def set_flag(i):
     return list(aux)
 
 # Truncate names and create the matrix
-# def prepare_encod_names(X):
-#     vec_names = []
-#     trunc_name = [str(i)[0:maxlen] for i in X]  # consider only the first 20 characters
-#     for i in trunc_name:
-#         tmp = [set_flag(char_index[j]) for j in str(i)]
-#         for k in range(0,maxlen - len(str(i))):
-#             tmp.append(set_flag(char_index["END"]))
-#         vec_names.append(tmp)
-#     return vec_names
-
 def prepare_encod_names(X):
     vec_names = []
     trunc_name = [str(i)[0:maxlen] for i in X]  # consider only the first 20 characters
