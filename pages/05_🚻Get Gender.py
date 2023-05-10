@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 from tensorflow import keras
 from sklearn.metrics import f1_score
+import unicodedata
 
 st.set_page_config(
     page_title='Gender Identifier',
@@ -116,6 +117,9 @@ def predict_gender(name):
         name = name.lower()
     except:
         name = name.casefold()
+
+    # Normalize the name to remove diacritic marks and special characters
+    name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('utf-8')
 
     name = prepare_encod_names([name])  # Now the names are encod as a vector of numbers with weight
     resu = (loaded_model.predict(name) > 0.5).astype("int32")
