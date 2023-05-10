@@ -113,9 +113,9 @@ st.markdown("##")
 
 def predict_gender(name):
     try:
-        name = str(name).lower()
+        name = name.lower()
     except:
-        name = str(name).casefold()
+        name = name.casefold()
 
     name = prepare_encod_names([name])  # Now the names are encod as a vector of numbers with weight
     resu = (loaded_model.predict(name) > 0.5).astype("int32")
