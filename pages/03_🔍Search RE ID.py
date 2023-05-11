@@ -15,7 +15,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Load the Parquet file into a Pandas dataframe
-@st.cache_data
+@st.cache_data(ttl=3600) # Reset cache every 1 Hour
 def get_data():
     data = pd.read_parquet('Databases/System Record IDs')
     return data
