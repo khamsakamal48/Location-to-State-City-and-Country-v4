@@ -210,9 +210,10 @@ def patch_request_re(url, params):
         # Request headers
         'Bb-Api-Subscription-Key': RE_API_KEY,
         'Authorization': 'Bearer ' + access_token,
+        'Content-Type': 'application/json'
     }
 
-    re_api_response = http.patch(url, params=params, headers=headers).json()
+    re_api_response = http.patch(url, headers=headers, data=json.dumps(params)).json()
 
 def get_iitb_emails():
 
