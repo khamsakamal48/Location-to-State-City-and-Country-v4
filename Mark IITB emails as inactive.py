@@ -213,7 +213,7 @@ def patch_request_re(url, params):
         'Content-Type': 'application/json'
     }
 
-    re_api_response = http.patch(url, headers=headers, data=json.dumps(params)).json()
+    re_api_response = http.patch(url, headers=headers, data=json.dumps(params))
 
 def get_iitb_emails():
 
@@ -224,7 +224,6 @@ def get_iitb_emails():
                     email_list['address'] != 'ceo.drf@iitb.ac.in') & (email_list['address'] != 'director@iitb.ac.in')]
 
     return iitb_emails
-
 
 try:
     # Start Logging for Debugging
