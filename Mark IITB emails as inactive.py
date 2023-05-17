@@ -260,7 +260,7 @@ try:
 
         patch_request_re(url, params)
 
-        time.sleep(5)
+        time.time.sleep(5)
 
 except Exception as Argument:
 
