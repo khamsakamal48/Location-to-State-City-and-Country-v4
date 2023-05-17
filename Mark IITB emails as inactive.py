@@ -253,6 +253,8 @@ try:
 
     for each_row in iitb_emails.index:
 
+        logging.info(f"Marking {iitb_emails['address'][each_row]} as inactive")
+
         email_address_id = iitb_emails['id'][each_row]
         url = f'https://api.sky.blackbaud.com/constituent/v1/emailaddresses/{email_address_id}'
 
