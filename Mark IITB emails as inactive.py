@@ -201,9 +201,13 @@ def retrieve_token():
 
 
 def patch_request_re(url, params):
+
     global re_api_response
 
     logging.info('Running Patch Request from RE function')
+
+    # Retrieve access_token from file
+    retrieve_token()
 
     # Request Headers for Blackbaud API request
     headers = {
@@ -237,9 +241,6 @@ try:
 
     # Set API Request strategy
     set_api_request_strategy()
-
-    # Retrieve access_token from file
-    retrieve_token()
 
     # Get Active IITB Emails
     iitb_emails = get_iitb_emails().copy()
