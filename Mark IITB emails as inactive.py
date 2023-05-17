@@ -7,7 +7,7 @@ import imaplib
 import datetime
 import logging
 import pandas as pd
-import time
+import time as te
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -260,7 +260,7 @@ try:
 
         patch_request_re(url, params)
 
-        time.time.sleep(5)
+        te.sleep(5)
 
 except Exception as Argument:
 
