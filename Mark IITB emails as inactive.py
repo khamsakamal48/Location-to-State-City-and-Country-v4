@@ -219,7 +219,7 @@ def get_iitb_emails():
     email_list = pd.read_parquet('Databases/System Record IDs')
 
     iitb_emails = email_list[
-        (email_list['address'].str.contains('@iitb.ac.in')) & (email_list['address'] != 'dean.acr@iitb.ac.in') & (
+        (email_list['address'].str.contains('@iitb.ac.in', case=False)) & (email_list['address'] != 'dean.acr@iitb.ac.in') & (
                     email_list['address'] != 'ceo.drf@iitb.ac.in') & (email_list['address'] != 'director@iitb.ac.in')]
 
     return iitb_emails
