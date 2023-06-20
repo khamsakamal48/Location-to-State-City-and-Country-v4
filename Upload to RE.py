@@ -1652,7 +1652,10 @@ try:
         data_uploaded = pd.DataFrame()
     
     ## Identify the new data which is yet to be uploaded
-    new_data = find_remaining_data(data_uploaded, form_data).copy()
+    try:
+        new_data = find_remaining_data(data_uploaded, form_data).copy()
+    except:
+        new_data = form_data.copy()
     
     # Upload data to RE
     for index, each_row in new_data.iterrows():
