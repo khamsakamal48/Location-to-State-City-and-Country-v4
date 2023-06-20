@@ -1646,7 +1646,10 @@ try:
     # Remove data that's already uploaded
     
     ## Load data that's uploaded
-    data_uploaded = load_data('Data Uploaded').copy()
+    try:
+        data_uploaded = load_data('Data Uploaded').copy()
+    except:
+        data_uploaded = pd.DataFrame()
     
     ## Identify the new data which is yet to be uploaded
     new_data = find_remaining_data(data_uploaded, form_data).copy()
