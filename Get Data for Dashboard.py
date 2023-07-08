@@ -233,8 +233,6 @@ def get_request_re(url, params):
     }
     
     re_api_response = http.get(url, params=params, headers=headers).json()
-    
-    logging.info(re_api_response)
 
 def post_request_re(url, params):
     
@@ -253,8 +251,6 @@ def post_request_re(url, params):
     }
     
     re_api_response = http.post(url, params=params, headers=headers, json=params).json()
-    
-    logging.info(re_api_response)
 
 def patch_request_re(url, params):
     
@@ -273,8 +269,6 @@ def patch_request_re(url, params):
     }
     
     re_api_response = http.patch(url, headers=headers, data=json.dumps(params))
-    
-    logging.info(re_api_response)
 
 def api_to_df(response):
     
@@ -373,11 +367,9 @@ def get_custom_fields():
 def data_pre_processing():
     
     data = pd.read_parquet('Databases/Custom Fields')
-    
+
     # Convert to Datetime format
-    data['date_added'] = pd.to_datetime(data['date_added'], utc=True)
-    
-    data['date'] = data['date_added'].dt.strftime('%d-%m-%Y')
+    data['date'] = data['date_added'].apply(lambda x: str(x).split('-')[2][0:2] + '-' + str(x).split('-')[1] + '-' + str(x).split('-')[0])
     data['date'] = pd.to_datetime(data['date'], format='%d-%m-%Y', errors='coerce')
     
     # Adding verified sources
