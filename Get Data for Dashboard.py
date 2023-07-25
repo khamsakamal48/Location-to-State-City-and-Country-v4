@@ -371,6 +371,8 @@ def get_custom_fields():
     df.to_parquet('Databases/Custom Fields', index=False)
 
 def data_pre_processing():
+
+    global email_providers
     
     data = pd.read_parquet('Databases/Custom Fields')
 
@@ -388,11 +390,11 @@ def data_pre_processing():
     data['update_type'] = data[['update_type', 'comment']].apply(lambda x: check_if_email(*x), axis=1)
     
     # Adding Type of Email
-    data['comment'] = data['comment'].fillna('')
-    data['email_type'] = data['comment'].apply(lambda x: email_type(x))
+    data['value'] = data['value'].fillna('')
+    data['email_type'] = data['value'].apply(lambda x: email_type(x))
     
     # Extracting domain of email address
-    data['email_domain'] = data['comment'].apply(lambda x: extract_domain(x))
+    data['email_domain'] = data['value'].apply(lambda x: extract_domain(x))
     
     # Checking if new record is an Alum
     data['update_type'] = data[['update_type', 'comment']].apply(lambda x: identify_new_record(*x), axis=1)
@@ -407,9 +409,21 @@ def data_pre_processing():
     data = data.drop(columns=['constituent_id']).copy()
 
     data['verified_source_category'] = data['verified_source'].apply(lambda x: get_verified_category(x))
+
+    # Source: https://gist.githubusercontent.com/ammarshah/f5c2624d767f91a7cbdc4e54db8dd0bf/raw/660fd949eba09c0b86574d9d3aa0f2137161fc7c/all_email_provider_domains.txt
+    email_providers = pd.read_csv('Databases/Email Providers.csv')
+    email_providers = email_providers['email_providers'].tolist()
+    data['email_domain_category'] = data['email_domain'].apply(lambda x: set_domain_priority(x))
     
     # export from dataframe to parquet
     data.to_parquet('Databases/Custom Fields', index=False)
+
+def set_domain_priority(domain):
+    if domain == 'gmail.com': return '1 - Gmail'
+    if domain == 'iitbombay.org': return '4 - IITBOMBAY.ORG'
+    if domain in email_providers: return '2 - Others'
+    if pd.isnull(domain): return np.NaN
+    else: return '3 - Business'
 
 # Function to get the category of the verified sources
 def get_verified_category(source):
