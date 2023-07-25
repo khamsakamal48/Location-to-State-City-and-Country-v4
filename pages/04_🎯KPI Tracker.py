@@ -31,7 +31,7 @@ plotly_config = {
 }
 
 # Load the Parquet file into a Pandas dataframe
-@st.cache_data(ttl=3600) # Reset cache every 1 Hour
+@st.cache_data()
 def get_data():
     data = pd.read_parquet('Databases/Custom Fields')
     # Reset the index so that the date column becomes a regular column
@@ -53,7 +53,10 @@ end_date = pd.Timestamp(end_date)
 shortlisted_data = data[data['date'].between(start_date, end_date)].reset_index(drop=True)
 
 # Get various sources
-verified_source = shortlisted_data[shortlisted_data['category'].str.contains('Verified', case=False)]['verified_source'].dropna().drop_duplicates().sort_values().reset_index(drop=True)
+verified_source = shortlisted_data[
+    (shortlisted_data['category'].str.contains('Verified', case=False)) &
+    (shortlisted_data['verified_source'] != '')
+]['verified_source'].dropna().drop_duplicates().sort_values().reset_index(drop=True)
 sync_source = shortlisted_data['sync_source'].drop_duplicates().dropna().sort_values().reset_index(drop=True)
 
 # Combine different sources to one
@@ -132,12 +135,12 @@ col2.metric("Phone", verified_phone)
 verified_emails = verified_contacts[verified_contacts['category'] == 'Verified Email'].groupby('date').nunique()['parent_id']
 verified_emails = verified_emails.resample('M').sum().reset_index()
 verified_emails['date'] = verified_emails['date'].dt.strftime('%b\'%y')
-verified_emails.rename(columns={'parent_id': 'Emails'}, inplace=True)
+verified_emails = verified_emails.rename(columns={'parent_id': 'Emails'}).copy()
 
 verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Phone'].groupby('date').nunique()['parent_id']
 verified_phone = verified_phone.resample('M').sum().reset_index()
 verified_phone['date'] = verified_phone['date'].dt.strftime('%b\'%y')
-verified_phone.rename(columns={'parent_id': 'Phones'}, inplace=True)
+verified_phone = verified_phone.rename(columns={'parent_id': 'Phones'}).copy()
 
 merged_df = pd.merge(verified_emails, verified_phone, on='date', how='outer')
 
@@ -257,7 +260,7 @@ st.markdown("##")
 st.markdown('##### Updates Breakdown')
 col1, col2, col3 = st.columns([2, 0.5, 2])
 
-updates_breakdown.reset_index(drop=True, inplace=True)
+updates_breakdown = updates_breakdown.reset_index(drop=True).copy()
 
 updates_breakdown_table = updates_breakdown.set_index('Description')
 
@@ -279,77 +282,77 @@ st.markdown("""---""")
 st.markdown("##")
 st.markdown('##### Email Updates Breakdown')
 
-email_updates_breakdown = updates[(updates['email_type'].notnull()) & (updates['update_type'] == 'Email')].reset_index(drop=True)
-email_updates_breakdown = email_updates_breakdown.copy()
-
-email_updates_type_breakdown = email_updates_breakdown.groupby(
-    by=['email_type']).nunique()['parent_id'].reset_index().rename(
-        columns={
-            'email_type': 'Description',
-            'parent_id': 'Updates'
-        }
-    )
-
-email_updates_type_breakdown = email_updates_type_breakdown.sort_values(by=['Description'], ascending=False)
-
-col1, col2, col3 = st.columns([2, 0.5, 2])
-
-email_updates_type_breakdown_table = email_updates_type_breakdown.copy().reset_index(drop=True)
-email_updates_type_breakdown_table.set_index('Description', inplace=True)
-
-col1.dataframe(email_updates_type_breakdown_table, use_container_width=True)
-
-# Create a Sunburst chart
-
-# Group email domains by count and get top 5
-top_domains = email_updates_breakdown['email_domain'].value_counts().nlargest(5)
-
-# Replace all other domains with 'Others'
-email_updates_breakdown.loc[~email_updates_breakdown['email_domain'].isin(top_domains.index), 'email_domain'] = 'Others'
-
-# Group by email type and email domain, and get unique count of IDs
-email_updates_breakdown_grouped = email_updates_breakdown.groupby(
-    ['email_type', 'email_domain']
-    )['parent_id'].nunique().reset_index().rename(
-        columns={
-            'email_type': 'Description',
-            'email_domain': 'Domain',
-            'parent_id': 'Count'
-        }
-    )
-
-# Create Sunburst chart
-email_updates_breakdown_fig = px.sunburst(
-    email_updates_breakdown_grouped,
-    path=['Description', 'Domain'],
-    values='Count'
-)
-
-email_updates_breakdown_fig.update_layout(showlegend=True,
-                        margin=dict(t=0, b=0, l=0, r=175),
-                        font=dict(size=13)
-                        )
-
-col3.plotly_chart(email_updates_breakdown_fig, config=plotly_config)
-
-# Define the sorting order
-order = {'Others': 0}
-
-# Sort the DataFrame
-email_updates_breakdown_grouped['sorting_value'] = email_updates_breakdown_grouped['Domain'].map(order)
-email_updates_breakdown_grouped['sorting_value'].fillna(1, inplace=True)
-email_updates_breakdown_grouped.sort_values(['Description', 'sorting_value', 'Count'], ascending=[False, False, False], inplace=True)
-email_updates_breakdown_grouped.drop(columns=['sorting_value'], inplace=True)
-
-col1.write('###')
-
-email_updates_breakdown_grouped.reset_index(drop=True, inplace=True)
-email_updates_breakdown_grouped.set_index('Description', inplace=True)
-
-col1.dataframe(email_updates_breakdown_grouped, use_container_width=True)
-col2.write(' ')
-text = 'The increased count is due to the fact that multiple email address type(s) got updated for each record and hence it is counted more than once.'
-st.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
+# email_updates_breakdown = updates[(updates['email_type'].notnull()) & (updates['update_type'] == 'Email')].reset_index(drop=True)
+# email_updates_breakdown = email_updates_breakdown.copy()
+#
+# email_updates_type_breakdown = email_updates_breakdown.groupby(
+#     by=['email_type']).nunique()['parent_id'].reset_index().rename(
+#         columns={
+#             'email_type': 'Description',
+#             'parent_id': 'Updates'
+#         }
+#     )
+#
+# email_updates_type_breakdown = email_updates_type_breakdown.sort_values(by=['Description'], ascending=False)
+#
+# col1, col2, col3 = st.columns([2, 0.5, 2])
+#
+# email_updates_type_breakdown_table = email_updates_type_breakdown.copy().reset_index(drop=True)
+# email_updates_type_breakdown_table = email_updates_type_breakdown_table.set_index('Description').copy()
+#
+# col1.dataframe(email_updates_type_breakdown_table, use_container_width=True)
+#
+# # Create a Sunburst chart
+#
+# # Group email domains by count and get top 5
+# top_domains = email_updates_breakdown['email_domain'].value_counts().nlargest(5)
+#
+# # Replace all other domains with 'Others'
+# email_updates_breakdown.loc[~email_updates_breakdown['email_domain'].isin(top_domains.index), 'email_domain'] = 'Others'
+#
+# # Group by email type and email domain, and get unique count of IDs
+# email_updates_breakdown_grouped = email_updates_breakdown.groupby(
+#     ['email_type', 'email_domain']
+#     )['parent_id'].nunique().reset_index().rename(
+#         columns={
+#             'email_type': 'Description',
+#             'email_domain': 'Domain',
+#             'parent_id': 'Count'
+#         }
+#     )
+#
+# # Create Sunburst chart
+# email_updates_breakdown_fig = px.sunburst(
+#     email_updates_breakdown_grouped,
+#     path=['Description', 'Domain'],
+#     values='Count'
+# )
+#
+# email_updates_breakdown_fig.update_layout(showlegend=True,
+#                         margin=dict(t=0, b=0, l=0, r=175),
+#                         font=dict(size=13)
+#                         )
+#
+# col3.plotly_chart(email_updates_breakdown_fig, config=plotly_config)
+#
+# # Define the sorting order
+# order = {'Others': 0}
+#
+# # Sort the DataFrame
+# email_updates_breakdown_grouped['sorting_value'] = email_updates_breakdown_grouped['Domain'].map(order)
+# email_updates_breakdown_grouped = email_updates_breakdown_grouped['sorting_value'].fillna(1).copy()
+# # email_updates_breakdown_grouped = email_updates_breakdown_grouped.sort_values(['Description', 'sorting_value', 'Count'], ascending=[False, False, False]).copy()
+# email_updates_breakdown_grouped = email_updates_breakdown_grouped.drop(columns=['sorting_value']).copy()
+#
+# col1.write('###')
+#
+# email_updates_breakdown_grouped = email_updates_breakdown_grouped.reset_index(drop=True).copy()
+# email_updates_breakdown_grouped = email_updates_breakdown_grouped.set_index('Description').copy()
+#
+# col1.dataframe(email_updates_breakdown_grouped, use_container_width=True)
+# col2.write(' ')
+# text = 'The increased count is due to the fact that multiple email address type(s) got updated for each record and hence it is counted more than once.'
+# st.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
 
 # Location Updates
 # st.markdown("""---""")
