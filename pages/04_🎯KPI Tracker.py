@@ -362,3 +362,8 @@ st.markdown('##### Email Updates Breakdown')
 # location_updates = updates[updates['update_type'] == 'Location'].reset_index(drop=True)
 
 # st.dataframe(location_updates.head())
+st.divider()
+if st.button('Clear cached data for the dashboard'):
+    # Clear values from *all* all in-memory and on-disk data caches:
+    # i.e. clear values from both square and cube
+    st.cache_data.clear()
