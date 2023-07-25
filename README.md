@@ -16,6 +16,8 @@ pip install nameparser
 pip install plotly-express
 pip install openpyxl
 pip install chardet
+pip install tensorflow
+pip install scikit-learn
 ```
 
 ## How to run streamlit as service and reverse proxy through NGINX
