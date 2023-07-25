@@ -245,7 +245,9 @@ def load_from_json_to_parquet():
     
     # Get a list of all the file paths that ends with wildcard from in specified directory
     fileList = glob.glob('API_Response_RE_*.json')
-    
+
+    df = pd.DataFrame()
+
     for each_file in fileList:
         
         # Open Each JSON File
@@ -259,16 +261,12 @@ def load_from_json_to_parquet():
             
             # Load to a dataframe
             df_ = pd.DataFrame(data=reff)
-            
-            try:
-                # Append/Concat datframes
-                df = pd.concat([df, df_])
-                
-            except:
-                df = df_.copy()
+
+            # Append/Concat dataframes
+            df = pd.concat([df, df_])
                 
     # export from dataframe to parquet
-    df = df[['address', 'constituent_id', 'id']]
+    df = df[['address', 'constituent_id', 'id', 'primary', 'type']].copy()
     df.to_parquet('Databases/System Record IDs', index=False)
 
 def get_request_re(url, params):
