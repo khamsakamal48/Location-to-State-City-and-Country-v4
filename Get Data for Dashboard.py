@@ -61,10 +61,7 @@ def set_api_request_strategy():
     logging.info('Setting API Request strategy')
     
     global http
-    
-    # API Request strategy
-    logging.info('Setting API Request Strategy')
-    
+
     retry_strategy = Retry(
         total=3,
         status_forcelist=[429, 500, 502, 503, 504],
@@ -300,8 +297,8 @@ def pagination_api_request(url, params):
         while os.path.exists(f'API_Response_RE_{process_name}_{i}.json'):
             i += 1
             
-        with open(f'API_Response_RE_{process_name}_{i}.json', 'w') as list_output:
-            json.dump(re_api_response, list_output,ensure_ascii=False, sort_keys=True, indent=4)
+        with open(f'API_Response_RE_{process_name}_{i}.json', 'w', encoding='utf-8') as list_output:
+            json.dump(re_api_response, list_output, ensure_ascii=True, sort_keys=True, indent=4)
         
         # Check if a variable is present in file
         with open(f'API_Response_RE_{process_name}_{i}.json') as list_output_last:
@@ -324,7 +321,7 @@ def load_from_json_to_parquet():
     for each_file in fileList:
         
         # Open Each JSON File
-        with open(each_file, 'r') as json_file:
+        with open(each_file, 'r', encoding='utf8') as json_file:
             
             # Load JSON File
             json_content = json.load(json_file)
@@ -351,14 +348,23 @@ def convert_to_strings(obj):
         return str(obj)
 
 def get_custom_fields():
+
+    categories = ['Verified Email', 'Verified Phone', 'Sync source', 'Verified Location']
+
+    df = pd.DataFrame()
+
+    for category in categories:
+        url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/customfields?limit=5000&category={category}'
+        params = {}
     
-    url = 'https://api.sky.blackbaud.com/constituent/v1/constituents/customfields?limit=5000'
-    params = {}
+        pagination_api_request(url, params)
     
-    pagination_api_request(url, params)
-    
-    # Load to Dataframe
-    df = load_from_json_to_parquet().copy()
+        # Load to Dataframe
+        df_1 = load_from_json_to_parquet().copy()
+        df = pd.concat([df, df_1])
+
+        # Housekeeping
+        housekeeping()
     
     # export from dataframe to parquet
     logging.info('Loading DataFrame to file')
@@ -373,7 +379,7 @@ def data_pre_processing():
     data['date'] = pd.to_datetime(data['date'], format='%d-%m-%Y', errors='coerce')
     
     # Adding verified sources
-    data['verified_source'] = data[['category', 'comment']].apply(lambda x: verified_sources(*x), axis = 1)
+    data['verified_source'] = data[['category', 'comment']].apply(lambda x: verified_sources(*x), axis=1)
     
     # Adding sync sources
     data[['sync_source', 'update_type']] = data[['value']].apply(lambda x: pd.Series(sync_source(x[0])), axis=1)
@@ -382,7 +388,7 @@ def data_pre_processing():
     data['update_type'] = data[['update_type', 'comment']].apply(lambda x: check_if_email(*x), axis=1)
     
     # Adding Type of Email
-    data['comment'].fillna('', inplace=True)
+    data['comment'] = data['comment'].fillna('')
     data['email_type'] = data['comment'].apply(lambda x: email_type(x))
     
     # Extracting domain of email address
@@ -398,28 +404,26 @@ def data_pre_processing():
     address_data['constituent_id'] = address_data['constituent_id'].astype(int)
     
     data = pd.merge(left=data, right=address_data[['constituent_id', 'city', 'county', 'country']].drop_duplicates(), left_on='parent_id', right_on='constituent_id', how='left')
-    data.drop(columns=['constituent_id'], inplace=True)
+    data = data.drop(columns=['constituent_id']).copy()
+
+    data['verified_source_category'] = data['verified_source'].apply(lambda x: get_verified_category(x))
     
     # export from dataframe to parquet
     data.to_parquet('Databases/Custom Fields', index=False)
 
+# Function to get the category of the verified sources
+def get_verified_category(source):
+    if source == 'RE Email Engagement_Appeals' or source == 'RE Email Engagement': return 'Opens'
+    elif source == 'Live Alumni': return 'Live Alumni'
+    elif source == 'Alumni Association': return 'Alumni Association'
+    elif pd.isnull(source) or source == '': return np.NaN
+    else: return 'Alum'
+
 # Function to extract domain from email
 def extract_domain(email):
-    
-    try:
-        
-        if '@' in email:
-            domain = str(email.split('@')[1]).lower().strip()
-            
-            if domain == '':
-                domain = np.NaN
-        
-        else:
-            domain = np.NaN
-    except:
-        domain = np.NaN
-    
-    return domain
+
+    if '@' in email: return str(email.split('@')[1]).lower().strip()
+    else: return np.NaN
 
 def email_type(email):
     
@@ -493,20 +497,22 @@ def sync_source(source):
     return sync_source, update_type
 
 def check_if_email(type, email):
-    
-    if type == 'Email':
-        
-        if 'https://' in email:
-            type = np.NaN
-            
-        else:
-            if '@' in email:
-                type = type
-            
-            else:
+
+    if email is None: return np.NaN
+    else:
+        if type == 'Email':
+
+            if 'https://' in email:
                 type = np.NaN
-    
-    return type
+
+            else:
+                if '@' in email:
+                    type = type
+
+                else:
+                    type = np.NaN
+
+        return type
 
 def identify_new_record(update_type, type):
     
@@ -534,8 +540,7 @@ def get_addresses():
     df = load_from_json_to_parquet().copy()
     
     # Sort by preferred address
-    df = df[df['preferred'] == 'True']
-    df = df.copy()
+    df = df[df['preferred'] == True].copy()
     
     # export from dataframe to parquet
     logging.info('Loading Address DataFrame to file')
