@@ -8,6 +8,8 @@ import imaplib
 import datetime
 import logging
 import pandas as pd
+import numpy as np
+import base64
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -242,6 +244,8 @@ def pagination_api_request(url, params):
 def load_from_json_to_parquet():
     
     logging.info('Loading from JSON to Parquet file')
+
+    global email_providers
     
     # Get a list of all the file paths that ends with wildcard from in specified directory
     fileList = glob.glob('API_Response_RE_*.json')
@@ -264,9 +268,17 @@ def load_from_json_to_parquet():
 
             # Append/Concat dataframes
             df = pd.concat([df, df_])
+
+    email_providers = pd.read_csv('Databases/Email Providers.csv')
+    email_providers = email_providers['email_providers'].drop_duplicates().tolist()
                 
     # export from dataframe to parquet
     df = df[['address', 'constituent_id', 'id', 'primary', 'type']].copy()
+
+    df['domain'] = df['address'].apply(lambda x: get_domain(x))
+    df = df.sort_values(['constituent_id', 'primary', 'domain'], ascending=[True, False, True]).drop_duplicates(
+        ['address', 'constituent_id']).reset_index(drop=True).copy()
+
     df.to_parquet('Databases/System Record IDs', index=False)
 
 def get_request_re(url, params):
@@ -283,6 +295,18 @@ def get_request_re(url, params):
     }
     
     re_api_response = http.get(url, params=params, headers=headers).json()
+
+def get_domain(email):
+
+    if '@' in email:
+        domain = email.split('@')[1].lower()
+
+        if domain == 'gmail.com': return '1 - Gmail'
+        elif domain == 'iitbombay.org': return '4 - IITBOMBAY.ORG'
+        elif domain in email_providers: return '2 - Others'
+        else: return '3 - Business'
+
+    else: return np.NaN
 
 try:
     
