@@ -164,7 +164,72 @@ fig.update_layout(
 )
 st.plotly_chart(fig, use_container_width=True, config=plotly_config)
 
-st.markdown("""---""")
+# Verified Email Address by Source Table
+verified_email_address = shortlisted_data[
+    (shortlisted_data['category'] == 'Verified Email') &
+    (shortlisted_data['verified_source'].isin(sources))
+].copy()
+verified_email_address = verified_email_address.sort_values(['parent_id', 'verified_source_category', 'email_domain_category']).reset_index(drop=True).copy()
+verified_email_address = verified_email_address[['parent_id', 'verified_source_category', 'email_domain_category']].drop_duplicates('parent_id').reset_index(drop=True).copy()
+verified_by_source = verified_email_address.groupby(['verified_source_category']).agg({'parent_id': 'count'}).reset_index().rename(columns={
+    'verified_source_category': 'Source',
+    'parent_id': 'Alum Count'
+})
+verified_by_source['Source'] = verified_by_source['Source'].apply(lambda x: x.split(' - ')[1])
+verified_by_source['Alum Count'] = verified_by_source['Alum Count'].apply(lambda x: "{:,}".format(x))
+
+# Verified Emails by Domain Table
+verified_by_domain = verified_email_address.groupby(['email_domain_category']).agg({'parent_id': 'count'}).reset_index().rename(columns={
+    'email_domain_category': 'Domain',
+    'parent_id': 'Alum Count'
+})
+verified_by_domain['Domain'] = verified_by_domain['Domain'].apply(lambda x: x.split(' - ')[1])
+verified_by_domain['Alum Count'] = verified_by_domain['Alum Count'].apply(lambda x: "{:,}".format(x))
+
+# Figure
+combined_verified = verified_email_address.groupby(['verified_source_category', 'email_domain_category']).agg({'parent_id': 'count'}).reset_index().rename(columns={
+    'verified_source_category': 'Source',
+    'email_domain_category': 'Domain',
+    'parent_id': 'Alum Count'
+}).copy()
+combined_verified['Source'] = combined_verified['Source'].apply(lambda x: x.split(' - ')[1])
+combined_verified['Domain'] = combined_verified['Domain'].apply(lambda x: x.split(' - ')[1])
+
+st.markdown('##')
+st.markdown('##### Verified Email Addresses')
+col9, col10 = st.columns(2)
+
+with col9:
+    col9.write('By source')
+    col9.dataframe(verified_by_source, hide_index=True, use_container_width=True)
+    # col9.markdown('##')
+    col9.write('By Domain')
+    col9.dataframe(verified_by_domain, hide_index=True, use_container_width=True)
+
+with col10:
+    # Create Sunburst chart
+    verified_email_updates_breakdown_fig = px.sunburst(
+        combined_verified,
+        path=['Source', 'Domain'],
+        values='Alum Count',
+        hover_data=['Alum Count'],
+    )
+
+    # Format the hover text to show percentages
+    verified_email_updates_breakdown_fig.update_traces(
+        hovertemplate='<b>%{label}:</b> %{value} (%{percentParent})',
+        textinfo='label+percent parent',  # Show label and percentage of parent on chart
+        insidetextorientation='radial'  # Orient text radially inside wedges
+    )
+
+    verified_email_updates_breakdown_fig.update_layout(
+        showlegend=True,
+        font=dict(size=13)
+    )
+
+    col10.plotly_chart(verified_email_updates_breakdown_fig, config=plotly_config, use_container_width=True)
+
+st.divider()
 
 # Row C
 st.markdown('## Database Update Summary')
@@ -257,8 +322,9 @@ updates_breakdown = updates.groupby(
 updates_breakdown = updates_breakdown.sort_values(by=['Updates'], ascending=False)
 
 st.markdown("##")
-st.markdown('##### Updates Breakdown')
-col1, col2, col3 = st.columns([2, 0.5, 2])
+st.markdown('#### Updates Breakdown')
+# col1, col2, col3 = st.columns([2, 0.5, 2])
+col1, col3 = st.columns(2)
 
 updates_breakdown = updates_breakdown.reset_index(drop=True).copy()
 
@@ -273,14 +339,16 @@ col1.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
 pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'], title='', color=np.log10(updates_breakdown['Updates']))
 pie_chart.update_traces(textposition='outside', textinfo='percent+label')
 pie_chart.update_layout(showlegend=False,
-                        margin=dict(t=15, b=0, l=0, r=175),
+                        # margin=dict(t=15, b=0, l=0, r=175),
                         # font=dict(size=13)
                         )
-col3.plotly_chart(pie_chart, config=plotly_config)
+col3.plotly_chart(pie_chart, config=plotly_config, use_container_width=True)
 
 st.markdown("""---""")
 st.markdown("##")
-st.markdown('##### Email Updates Breakdown')
+st.markdown('### Email Updates Breakdown')
+
+
 
 # email_updates_breakdown = updates[(updates['email_type'].notnull()) & (updates['update_type'] == 'Email')].reset_index(drop=True)
 # email_updates_breakdown = email_updates_breakdown.copy()
