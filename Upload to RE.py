@@ -262,12 +262,9 @@ def find_remaining_data(all_df, partial_df):
     
     logging.info('Identifying missing data between two Panda Dataframes')
 
-    # Merge DataFrame A and DataFrame B, keeping only the rows from B that don't have a match in A
-    remaining_data = pd.merge(partial_df, all_df, how='left', indicator=True)
-    remaining_data = remaining_data[remaining_data['_merge'] == 'left_only']
-
-    # Drop the '_merge' column from the result
-    remaining_data = remaining_data.drop('_merge', axis=1)
+    # Identify data present in all_df but missing in partial_df
+    remaining_data = all_df[~all_df['ID'].isin(partial_df['ID'])].copy()
+    remaining_data = remaining_data.drop(columns=['ID']).reset_index(drop=True).copy()
     
     return remaining_data
 
@@ -1596,6 +1593,7 @@ def check_if_new(each_row, constituent_id):
         
         ## Update Tags
         add_tags(source, 'Sync source', str(comment)[:50], constituent_id)
+
 try:
     
     # Set current directory
@@ -1618,7 +1616,7 @@ try:
     
     # Load file to a Dataframe
     form_data = load_data('Form Responses.xlsx').copy()
-    form_data.drop(columns = ['ID', 'Start time', 'Completion time', 'Email', 'Name'], inplace=True)
+    form_data.drop(columns = ['Start time', 'Completion time', 'Email', 'Name'], inplace=True)
     
     # Pre-process the data
     logging.info('Pre-processing data')
