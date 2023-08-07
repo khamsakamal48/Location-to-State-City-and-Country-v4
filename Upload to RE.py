@@ -264,7 +264,6 @@ def find_remaining_data(all_df, partial_df):
 
     # Identify data present in all_df but missing in partial_df
     remaining_data = all_df[~all_df['ID'].isin(partial_df['ID'])].copy()
-    remaining_data = remaining_data.drop(columns=['ID']).reset_index(drop=True).copy()
     
     return remaining_data
 
