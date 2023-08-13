@@ -453,7 +453,7 @@ def set_domain_priority(domain):
 
 # Function to get the category of the verified sources
 def get_verified_category(source):
-    if source == 'RE Email Engagement_Appeals' or source == 'RE Email Engagement': return '2 - Opens'
+    if source == 'RE Email Engagement_Appeals' or source == 'RE Email Engagement' or source == 'Netcore Email Engagement': return '2 - Opens'
     elif source == 'Live Alumni': return '3 - Live Alumni'
     elif source == 'Alumni Association': return '4 - Alumni Association'
     elif pd.isnull(source) or source == '': return np.NaN
