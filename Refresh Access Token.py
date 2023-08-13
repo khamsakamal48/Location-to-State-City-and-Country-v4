@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from datetime import datetime
-from datetime import time
 
 def api_request_strategy():
     

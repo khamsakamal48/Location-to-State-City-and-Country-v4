@@ -10,7 +10,6 @@ import numpy as np
 import base64
 
 from datetime import datetime
-from datetime import time
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 from dotenv import load_dotenv
