@@ -91,9 +91,9 @@ def get_env_variables():
     CLIENT_SECRET = os.getenv('CLIENT_SECRET')
     TENANT_ID = os.getenv('TENANT_ID')
     FROM = os.getenv('FROM')
-    SEND_TO  = os.getenv('SEND_TO')
+    SEND_TO  = eval(os.getenv('SEND_TO'))
     CC_TO = eval(os.getenv('CC_TO'))
-    ERROR_EMAILS_TO = os.getenv('ERROR_EMAILS_TO')
+    ERROR_EMAILS_TO = eval(os.getenv('ERROR_EMAILS_TO'))
     FORM_URL = os.getenv('FORM_URL')
 
 def send_error_emails(subject):
@@ -1306,6 +1306,8 @@ def send_mail_different_education(re_data, each_row, subject):
     result = app.acquire_token_silent(scopes, account=None)
 
     if not result:
+        result = app.acquire_token_for_client(scopes=scopes)
+
         TEMPLATE = """
         <p>Hi,</p>
         <p>This is to inform you that the Education data provided by Alum is different than that exists in Raisers Edge.</p>
