@@ -289,9 +289,7 @@ def load_from_json_to_parquet():
     # export from dataframe to parquet
     df = df[['address', 'constituent_id', 'id', 'primary', 'type']].copy()
 
-    df['domain'] = df['address'].apply(lambda x: get_domain(x))
-    df = df.sort_values(['constituent_id', 'primary', 'domain'], ascending=[True, False, True]).drop_duplicates(
-        ['address', 'constituent_id']).reset_index(drop=True).copy()
+    df[['domain', 'domain_category']] = df[['address', 'address']].apply(lambda x: get_domain(*x), result_type='expand', axis=1)
 
     df.to_parquet('Databases/System Record IDs', index=False)
 
@@ -310,17 +308,17 @@ def get_request_re(url, params):
     
     re_api_response = http.get(url, params=params, headers=headers).json()
 
-def get_domain(email):
+def get_domain(email, email1):
 
     if '@' in email:
         domain = email.split('@')[1].lower()
 
-        if domain == 'gmail.com': return '1 - Gmail'
-        elif domain == 'iitbombay.org': return '4 - IITBOMBAY.ORG'
-        elif domain in email_providers: return '2 - Others'
-        else: return '3 - Business'
+        if domain == 'gmail.com': return domain, '1 - Gmail'
+        elif domain == 'iitbombay.org': return domain, '4 - IITBOMBAY.ORG'
+        elif domain in email_providers: return domain, '2 - Others'
+        else: return domain, '3 - Business'
 
-    else: return np.NaN
+    else: return np.NaN, np.NaN
 
 try:
     
