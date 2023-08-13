@@ -6,3 +6,5 @@ Logs/*.log
 !Logs
 Test.*
 .DS_Store
+.bin
+.idea
