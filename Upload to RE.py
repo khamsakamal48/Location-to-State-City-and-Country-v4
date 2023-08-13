@@ -1695,7 +1695,7 @@ try:
     
     ## Identify the new data which is yet to be uploaded
     try:
-        new_data = find_remaining_data(data_uploaded, form_data).copy()
+        new_data = find_remaining_data(form_data, data_uploaded).copy()
     except:
         new_data = form_data.copy()
     
