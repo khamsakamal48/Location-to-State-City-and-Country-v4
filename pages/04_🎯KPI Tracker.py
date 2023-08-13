@@ -33,12 +33,27 @@ plotly_config = {
 # Load the Parquet file into a Pandas dataframe
 @st.cache_data()
 def get_data():
-    data = pd.read_parquet('Databases/Custom Fields')
-    # Reset the index so that the date column becomes a regular column
-    data = data.reset_index(drop=True)
-    return data
+    # Attributes List
+    df1 = pd.read_parquet('Databases/Custom Fields')
+    df1['date'] = pd.to_datetime(df1['date'])
 
-data = get_data()
+    # Reset the index so that the date column becomes a regular column
+    df1 = df1.reset_index(drop=True)
+
+    # Email List
+    df2 = pd.read_parquet('Databases/System Record IDs')
+    df2 = df2.sort_values(
+        by=['constituent_id', 'primary', 'type'],
+        ascending=[True, False, True]
+    ).copy()
+
+    df2 = df2.drop_duplicates('constituent_id').copy()
+
+    df2 = df2.dropna().reset_index(drop=True).copy()
+
+    return df1, df2
+
+data, email_list = get_data()
 
 # ---- SIDEBAR ----
 st.sidebar.header('Filters')
@@ -197,7 +212,7 @@ combined_verified['Domain'] = combined_verified['Domain'].apply(lambda x: x.spli
 
 st.markdown('##')
 st.markdown('##### Verified Email Addresses')
-col9, col10 = st.columns(2)
+col9, col10 = st.columns([1, 2])
 
 with col9:
     col9.write('By source')
@@ -224,7 +239,9 @@ with col10:
 
     verified_email_updates_breakdown_fig.update_layout(
         showlegend=True,
-        font=dict(size=13)
+        font=dict(size=15),
+        autosize=False,
+        height=550
     )
 
     col10.plotly_chart(verified_email_updates_breakdown_fig, config=plotly_config, use_container_width=True)
@@ -307,7 +324,7 @@ stacked_bar_chart.update_traces(textposition='auto')
 st.plotly_chart(stacked_bar_chart, use_container_width=True, config=plotly_config)
 
 
-st.markdown("""---""")
+st.divider()
 # Row D
 st.markdown('## Data Update Breakdown')
 
@@ -321,34 +338,90 @@ updates_breakdown = updates.groupby(
 
 updates_breakdown = updates_breakdown.sort_values(by=['Updates'], ascending=False)
 
-st.markdown("##")
-st.markdown('#### Updates Breakdown')
-# col1, col2, col3 = st.columns([2, 0.5, 2])
-col1, col3 = st.columns(2)
+st.divider()
 
-updates_breakdown = updates_breakdown.reset_index(drop=True).copy()
+col1, col2 = st.columns([1, 2])
 
-updates_breakdown_table = updates_breakdown.set_index('Description')
+with col1:
+    st.markdown('#### Updates Breakdown')
+    updates_breakdown = updates_breakdown.reset_index(drop=True).copy()
 
-col1.dataframe(updates_breakdown_table, use_container_width=True)
+    st.dataframe(updates_breakdown, use_container_width=True, hide_index=True)
+    st.write('The reason for the higher number is because for each record there are multiple details (like email or phone number), and each of those data points got updated. So, some records are listed more than once because their information overlaps in multiple rows.')
 
-text = 'The reason for the higher number is because for each record there are multiple details (like email or phone number), and each of those data points got updated. So, some records are listed more than once because their information overlaps in multiple rows.'
-col1.write(f"<p style='text-align: justify'>{text}</p>", unsafe_allow_html=True)
-
-# Pie Chart
-pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'], title='', color=np.log10(updates_breakdown['Updates']))
-pie_chart.update_traces(textposition='outside', textinfo='percent+label')
-pie_chart.update_layout(showlegend=False,
-                        # margin=dict(t=15, b=0, l=0, r=175),
-                        # font=dict(size=13)
-                        )
-col3.plotly_chart(pie_chart, config=plotly_config, use_container_width=True)
+with col2:
+    # Pie Chart
+    pie_chart = px.pie(updates_breakdown, values='Updates', names='Description', hover_data=['Updates'])
+    pie_chart.update_traces(textposition='auto', textinfo='percent+label')
+    pie_chart.update_layout(showlegend=False,
+                            autosize=False,
+                            height=600,
+                            font=dict(size=15)
+                            )
+    col2.plotly_chart(pie_chart, config=plotly_config, use_container_width=True)
 
 st.markdown("""---""")
 st.markdown("##")
-st.markdown('### Email Updates Breakdown')
+st.markdown('### Email Data Breakdown')
 
+col11, col12 = st.columns([1, 2])
 
+with col11:
+    st.markdown('#### Summary')
+
+    # Domain Group
+    email_by_domain_group = email_list[['domain_category', 'constituent_id']].groupby('domain_category').agg(
+        {'constituent_id': 'count'}).sort_values('domain_category').reset_index().copy()
+
+    email_by_domain_group = email_by_domain_group.rename(columns={
+        'domain_category': 'Domain',
+        'constituent_id': 'Alum Count'
+    })
+
+    email_by_domain_group['Alum Count'] = email_by_domain_group['Alum Count'].apply(lambda x: '{:,}'.format(x))
+
+    email_by_domain_group['Domain'] = email_by_domain_group['Domain'].apply(lambda x: x.split('-', 1)[1])
+
+    st.dataframe(email_by_domain_group, hide_index=True, use_container_width=True)
+
+    # Domain
+    st.markdown('#### By Domain')
+    email_by_domain = email_list[['domain', 'constituent_id']].groupby('domain').agg(
+        {'constituent_id': 'count'}).sort_values(by=['constituent_id'], ascending=[False]).reset_index().copy()
+
+    email_by_domain = email_by_domain.rename(columns={
+        'domain': 'Domain',
+        'constituent_id': 'Alum Count'
+    })
+
+    email_by_domain['Alum Count'] = email_by_domain['Alum Count'].apply(lambda x: '{:,}'.format(x))
+
+    st.dataframe(email_by_domain, hide_index=True, use_container_width=True)
+
+with col12:
+    email_by_domain_group['Alum Count'] = email_by_domain_group['Alum Count'].apply(lambda x: x.replace(',', ''))
+    email_by_domain_group['Alum Count'] = email_by_domain_group['Alum Count'].astype(int)
+
+    st.plotly_chart(
+        px.pie(
+            email_by_domain_group,
+            values='Alum Count',
+            names='Domain'
+        ).update_traces(
+            textposition='inside',
+            textinfo='percent+label'
+        ).update(
+            layout_showlegend=False
+        ).update_layout(
+            autosize=False,
+            height=600,
+            font=dict(size=15)
+        ),
+        config=plotly_config,
+        use_container_width=True
+    )
+
+st.divider()
 
 # email_updates_breakdown = updates[(updates['email_type'].notnull()) & (updates['update_type'] == 'Email')].reset_index(drop=True)
 # email_updates_breakdown = email_updates_breakdown.copy()
