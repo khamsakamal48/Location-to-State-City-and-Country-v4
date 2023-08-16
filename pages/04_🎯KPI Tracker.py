@@ -51,9 +51,29 @@ def get_data():
 
     df2 = df2.dropna().reset_index(drop=True).copy()
 
-    return df1, df2
+    # All Alums
+    df3 = pd.read_parquet('Databases/All Alums.parquet')
 
-data, email_list = get_data()
+    list_1 = df3['id'].astype(int).to_list()
+
+    # Deceased list
+    df4 = pd.read_parquet('Databases/All Constituents.parquet')
+    list_2 = df4[
+        df4['deceased'] == 'True'
+    ]['id'].astype(int).to_list()
+
+    # Inactive list
+    list_3 = df4[
+        df4['inactive'] == 'True'
+    ]['id'].astype(int).to_list()
+
+    # Getting list of opt-outs
+    df5 = pd.read_parquet('Databases/Opt-outs.parquet')
+    list_4 = df5['id'].astype(int).to_list()
+
+    return df1, df2, list_1, list_2, list_3, list_4
+
+data, email_list, alum_list, deceased_list, inactive_list, opt_outs = get_data()
 
 # ---- SIDEBAR ----
 st.sidebar.header('Filters')
@@ -64,8 +84,28 @@ end_date = st.sidebar.date_input("End date", value=data['date'].max())
 start_date = pd.Timestamp(start_date)
 end_date = pd.Timestamp(end_date)
 
+# Shortlist only Alums in shortlisted data
+only_alums = st.sidebar.checkbox('Only Alums?')
+if only_alums:
+    data = data[data['parent_id'].isin(alum_list)].reset_index(drop=True).copy()
+
+# Shortlist non-deceased (alive) constituents only
+ignore_deceased = st.sidebar.checkbox('Ignore deceased constituents?')
+if ignore_deceased:
+    data = data[~data['parent_id'].isin(deceased_list)].reset_index(drop=True).copy()
+
+# Shortlist active constituents only
+ignore_inactive = st.sidebar.checkbox('Ignore non-active constituents?')
+if ignore_inactive:
+    data = data[~data['parent_id'].isin(inactive_list)].reset_index(drop=True).copy()
+
+# Shortlist non-opted out constituents only
+ignore_opt_outs= st.sidebar.checkbox('Ignore opted-out constituents?')
+if ignore_opt_outs:
+    data = data[~data['parent_id'].isin(opt_outs)].reset_index(drop=True).copy()
+
 # Shortlist data based on Date
-shortlisted_data = data[data['date'].between(start_date, end_date)].reset_index(drop=True)
+shortlisted_data = data[data['date'].between(start_date, end_date)].reset_index(drop=True).copy()
 
 # Get various sources
 verified_source = shortlisted_data[
@@ -504,7 +544,7 @@ st.divider()
 
 # st.dataframe(location_updates.head())
 st.divider()
-if st.button('Clear cached data for the dashboard'):
+if st.sidebar.button('Clear cached data for the dashboard'):
     # Clear values from *all* all in-memory and on-disk data caches:
     # i.e. clear values from both square and cube
     st.cache_data.clear()
