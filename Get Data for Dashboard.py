@@ -615,6 +615,20 @@ def get_opt_outs():
     # export from dataframe to parquet
     df.to_parquet('Databases/Opt-outs.parquet', index=False)
 
+def get_constituents():
+    logging.info('Getting list of all constituents')
+
+    url = 'https://api.sky.blackbaud.com/constituent/v1/constituents?include_inactive=true&include_deceased=true&fields=id,deceased,inactive&limit=5000'
+    params = {}
+
+    pagination_api_request(url, params)
+
+    # Load to Dataframe
+    df = load_from_json_to_parquet().copy()
+
+    # export from dataframe to parquet
+    df.to_parquet('Databases/All Constituents.parquet', index=False)
+
 try:
     
     # Set current directory
@@ -649,6 +663,9 @@ try:
 
     # Get Opt-outs
     get_opt_outs()
+
+    # Get list of all constituents
+    get_constituents()
 
 except Exception as Argument:
     
