@@ -71,7 +71,7 @@ def get_env_variables():
     
     logging.info('Setting Environment variables')
     
-    global RE_API_KEY, O_CLIENT_ID, CLIENT_SECRET, TENANT_ID, FROM, CC_TO, ERROR_EMAILS_TO, SEND_TO
+    global RE_API_KEY, O_CLIENT_ID, CLIENT_SECRET, TENANT_ID, FROM, CC_TO, ERROR_EMAILS_TO, SEND_TO, LIST_1
 
     load_dotenv()
 
@@ -83,6 +83,7 @@ def get_env_variables():
     SEND_TO = eval(os.getenv('SEND_TO'))
     CC_TO = eval(os.getenv('CC_TO'))
     ERROR_EMAILS_TO = eval(os.getenv('ERROR_EMAILS_TO'))
+    LIST_1 = os.getenv('LIST_1') # Opt outs list
 
 def get_recipients(email_list):
     value = []
@@ -122,7 +123,7 @@ def send_error_emails(subject, Argument):
         <tbody>
         <tr style="height: 127px;">
         <td style="background-color: #363636; width: 100%; text-align: center; vertical-align: middle; height: 127px;">&nbsp;
-        <h1><span style="color: #ffffff;">&nbsp;Raiser's Edge Automation: {{job_name}} Failed</span>&nbsp;</h1>
+        <h1><span style="color: #ffffff;">&nbsp;Raiser's Edge Automation: {job_name} Failed</span>&nbsp;</h1>
         </td>
         </tr>
         <tr style="height: 18px;">
@@ -145,11 +146,11 @@ def send_error_emails(subject, Argument):
         <tbody>
         <tr>
         <td style="width: 50%; text-align: center; vertical-align: middle;">&nbsp;<span style="color: #ffffff;">Job :</span>&nbsp;</td>
-        <td style="background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;">&nbsp;{{job_name}}&nbsp;</td>
+        <td style="background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;">&nbsp;{job_name}&nbsp;</td>
         </tr>
         <tr>
         <td style="width: 50%; text-align: center; vertical-align: middle;">&nbsp;<span style="color: #ffffff;">Failed on :</span>&nbsp;</td>
-        <td style="background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;">&nbsp;{{current_time}}&nbsp;</td>
+        <td style="background-color: #ff8e2d; width: 50%; text-align: center; vertical-align: middle;">&nbsp;{current_time}&nbsp;</td>
         </tr>
         </tbody>
         </table>
@@ -162,7 +163,7 @@ def send_error_emails(subject, Argument):
         <td style="height: 18px; width: 100%; background-color: #ffffff; text-align: center; vertical-align: middle;">Below is the detailed error log,</td>
         </tr>
         <tr style="height: 217.34375px;">
-        <td style="height: 217.34375px; background-color: #f8f9f9; width: 100%; text-align: left; vertical-align: middle;">{{error_log_message}}</td>
+        <td style="height: 217.34375px; background-color: #f8f9f9; width: 100%; text-align: left; vertical-align: middle;">{error_log_message}</td>
         </tr>
         </tbody>
         </table>
@@ -586,6 +587,34 @@ def get_addresses():
     logging.info('Loading Address DataFrame to file')
     df.to_parquet('Databases/Address List', index=False)
 
+def get_only_alums():
+    logging.info('Getting list of only Alums')
+
+    url = 'https://api.sky.blackbaud.com/constituent/v1/constituents?constituent_code=Alumni&include_inactive=true&include_deceased=true&fields=id,deceased,inactive&limit=5000'
+    params = {}
+
+    pagination_api_request(url, params)
+
+    # Load to Dataframe
+    df = load_from_json_to_parquet().copy()
+
+    # export from dataframe to parquet
+    df.to_parquet('Databases/All Alums.parquet', index=False)
+
+def get_opt_outs():
+    logging.info('Getting list of opt-outs')
+
+    url = f'https://api.sky.blackbaud.com/constituent/v1/constituents?list_id={LIST_1}&limit=5000'
+    params = {}
+
+    pagination_api_request(url, params)
+
+    # Load to Dataframe
+    df = load_from_json_to_parquet().copy()
+
+    # export from dataframe to parquet
+    df.to_parquet('Databases/Opt-outs.parquet', index=False)
+
 try:
     
     # Set current directory
@@ -605,15 +634,21 @@ try:
     
     # Get Custom fields data of all constituent
     get_custom_fields()
-    
+
     # Housekeeping
     housekeeping()
-    
+
     # Get Address data of all constituent
     get_addresses()
-    
+
     # Data Pre-processing
     data_pre_processing()
+
+    # Get list of Alum
+    get_only_alums()
+
+    # Get Opt-outs
+    get_opt_outs()
 
 except Exception as Argument:
     
