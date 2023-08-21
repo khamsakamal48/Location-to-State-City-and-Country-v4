@@ -287,7 +287,7 @@ def load_from_json_to_parquet():
     email_providers = email_providers['email_providers'].drop_duplicates().tolist()
                 
     # export from dataframe to parquet
-    df = df[['address', 'constituent_id', 'id', 'primary', 'type']].copy()
+    df = df[['address', 'constituent_id', 'id', 'primary', 'type', 'inactive']].copy()
 
     df[['domain', 'domain_category']] = df[['address', 'address']].apply(lambda x: get_domain(*x), result_type='expand', axis=1)
 
