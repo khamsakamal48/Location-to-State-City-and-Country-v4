@@ -311,7 +311,7 @@ def get_request_re(url, params):
     
     logging.info(re_api_response)
     
-    check_errors(re_api_response)
+    # check_errors(re_api_response)
     
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
@@ -337,7 +337,7 @@ def post_request_re(url, params):
     
     logging.info(re_api_response)
     
-    check_errors(re_api_response)
+    # check_errors(re_api_response)
     
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
@@ -363,7 +363,7 @@ def patch_request_re(url, params):
     
     logging.info(re_api_response)
     
-    check_errors(re_api_response)
+    # check_errors(re_api_response)
     
     # Sleep for 5 seconds
     logging.info('Sleeping for 5 seconds')
@@ -1696,10 +1696,7 @@ try:
         data_uploaded = pd.DataFrame()
     
     ## Identify the new data which is yet to be uploaded
-    try:
-        new_data = find_remaining_data(form_data, data_uploaded).copy()
-    except:
-        new_data = form_data.copy()
+    new_data = find_remaining_data(form_data, data_uploaded).copy()
     
     # Upload data to RE
     for index, each_row in new_data.iterrows():
@@ -1709,7 +1706,7 @@ try:
         each_row_bak = each_row.copy()
 
         # Get RE ID
-        constituent_id = int(each_row['System Record ID'])
+        constituent_id = int(each_row['System Record ID'][0])
 
         logging.info(f'Proceeding to update record with System Record ID: {constituent_id}')
 
@@ -1739,11 +1736,6 @@ try:
             # Check if the record is a new record
             check_if_new(each_row, constituent_id)
 
-            # Create database of file that's already uploaded
-            logging.info('Updating Database of synced records')
-            data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0,  ignore_index=True)
-            data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
-
             # Sleep for 5 seconds
             logging.info('Sleeping for 5 seconds')
             time.sleep(5)
@@ -1760,10 +1752,10 @@ try:
 
             pass
 
-    # Check for errors
-    with open(f'Logs/{process_name}.log') as log:
-        contents = log.read()
-        check_errors(contents)
+        # Create database of file that's already uploaded
+        logging.info('Updating Database of synced records')
+        data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0, ignore_index=True)
+        data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
 
 except Exception as Argument:
 
