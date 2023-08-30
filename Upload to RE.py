@@ -195,7 +195,7 @@ def send_error_emails(subject):
                     'Attachments': [
                         {
                             '@odata.type': '#microsoft.graph.fileAttachment',
-                            'name': f'Logs/{process_name}.log',
+                            'name': f'{process_name}.log',
                             'contentBytes': attachment_content
                         }
                     ]
