@@ -76,7 +76,7 @@ st.header('Enter the email address')
 email = st.text_input('Email address', placeholder='Enter the email address for which you want to search the Profile picture', label_visibility='collapsed')
 email = email.strip()
 
-if st.button('Check for Picture', use_container_width=True):
+if st.button('**Check for Picture**', use_container_width=True, type='primary'):
     if username and password:
         if email:
             if is_valid_email(email):
