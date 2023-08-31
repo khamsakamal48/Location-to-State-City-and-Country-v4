@@ -89,9 +89,14 @@ if st.button('Check for Picture', use_container_width=True):
                         pic = response['Image']
                         col1, col2, col3 = st.columns(3)
                         col2.image(pic, use_column_width='auto')
+
                     except:
                         if response['Error'] == 'Not found':
                             st.warning('No image found', icon='😔')
+
+                        else:
+                            st.error('An error occurred', icon='⚠️')
+                            st.json(response)
 
                 else:
                     st.error('An error occurred', icon='⚠️')
