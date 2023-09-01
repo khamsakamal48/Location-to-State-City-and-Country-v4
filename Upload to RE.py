@@ -1620,9 +1620,10 @@ def check_if_new(each_row, constituent_id):
     re_data.reset_index(drop=True, inplace=True)
     
     created_date = re_data['date_added'][0]
+    created_date = pd.to_datetime(created_date, format='ISO8601')
+    created_date = created_date.date()
     
     # Get Current Date
-    today = date.today().strftime("%m-%d-%Y")
     today = date.today()
     
     # Date 7 Days ago
@@ -1639,6 +1640,92 @@ def check_if_new(each_row, constituent_id):
         
         ## Update Tags
         add_tags(source, 'Sync source', str(comment)[:50], constituent_id)
+
+def issue_with_updates(df, error):
+
+    logging.info('Sending email for failure to update record')
+
+    authority = f'https://login.microsoftonline.com/{TENANT_ID}'
+
+    app = msal.ConfidentialClientApplication(
+        client_id=O_CLIENT_ID,
+        client_credential=CLIENT_SECRET,
+        authority=authority
+    )
+
+    scopes = ["https://graph.microsoft.com/.default"]
+
+    result = None
+    result = app.acquire_token_silent(scopes, account=None)
+
+    if not result:
+        result = app.acquire_token_for_client(scopes=scopes)
+
+        TEMPLATE = """
+            <p>Hi,</p>
+            <p>This is to inform you that the we were unable to update below record in Raisers Edge.</p>
+            <p><a href="https://host.nxt.blackbaud.com/constituent/records/{constituent_id}?envId=p-dzY8gGigKUidokeljxaQiA&amp;svcId=renxt" target="_blank"><strong>Open in RE</strong></a></p>
+            <p>&nbsp;</p>
+            <p>Below is the data for your reference:</p>
+            <h3>Alumni Data:</h3>
+            <p>{re_data}</p>
+            <p>&nbsp;</p>
+            <h3>Error:</h3>
+            <p>{error}</p>
+            <p>&nbsp;</p>
+            <p>Thanks &amp; Regards</p>
+            <p>A Bot.</p>
+            """
+
+        # Create a text/html message from a rendered template
+        emailbody = TEMPLATE.format(
+            constituent_id=constituent_id,
+            re_data=df.to_html(index=False),
+            error=str(error)
+        )
+
+        subject = 'Failure to update record in Raisers Edge | Database Update Workflow'
+
+        # Set up attachment data
+        with open(f'Logs/{process_name}.log', 'rb') as f:
+            attachment_content = f.read()
+        attachment_content = base64.b64encode(attachment_content).decode('utf-8')
+
+        if "access_token" in result:
+
+            endpoint = f'https://graph.microsoft.com/v1.0/users/{FROM}/sendMail'
+
+            email_msg = {
+                'Message': {
+                    'Subject': subject,
+                    'Body': {
+                        'ContentType': 'HTML',
+                        'Content': emailbody
+                    },
+                    'ToRecipients': get_recipients(ERROR_EMAILS_TO),
+                    'Attachments': [
+                        {
+                            '@odata.type': '#microsoft.graph.fileAttachment',
+                            'name': f'{process_name}.log',
+                            'contentBytes': attachment_content
+                        }
+                    ]
+                },
+                'SaveToSentItems': 'true'
+            }
+
+            requests.post(
+                endpoint,
+                headers={
+                    'Authorization': 'Bearer ' + result['access_token']
+                },
+                json=email_msg
+            )
+
+        else:
+            logging.info(result.get('error'))
+            logging.info(result.get('error_description'))
+            logging.info(result.get('correlation_id'))
 
 try:
     
@@ -1740,22 +1827,19 @@ try:
             logging.info('Sleeping for 5 seconds')
             time.sleep(5)
 
-        except:
+            # Create database of file that's already uploaded
+            logging.info('Updating Database of synced records')
+            each_row_bak['Class of'] = pd.to_numeric(each_row_bak['Class of'], errors='ignore')
+            data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0, ignore_index=True)
+            data_uploaded = data_uploaded.drop_duplicates('ID').copy()
+            data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
 
-            try:
-                error_file = pd.read_csv('Databases/Data not uploaded.csv')
-                each_row_bak = pd.concat([error_file, each_row_bak], axis=0,  ignore_index=True)
-                each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
+        except Exception as Argument:
+            # Send email
+            issue_with_updates(each_row_bak, Argument)
 
-            except:
-                each_row_bak.to_csv('Databases/Data not uploaded.csv', index=False, lineterminator='\r\n', quoting=1)
-
+            # Move on to the next record
             pass
-
-        # Create database of file that's already uploaded
-        logging.info('Updating Database of synced records')
-        data_uploaded = pd.concat([data_uploaded, each_row_bak], axis=0, ignore_index=True)
-        data_uploaded.to_parquet('Databases/Data Uploaded', index=False)
 
 except Exception as Argument:
 
