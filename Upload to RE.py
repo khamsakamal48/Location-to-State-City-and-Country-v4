@@ -192,6 +192,7 @@ def send_error_emails(subject):
                         'Content': emailbody
                     },
                     'ToRecipients': get_recipients(ERROR_EMAILS_TO),
+                    'CcRecipients': get_recipients(CC_TO),
                     'Attachments': [
                         {
                             '@odata.type': '#microsoft.graph.fileAttachment',
@@ -469,7 +470,7 @@ def update_emails(each_row, constituent_id):
     logging.info('Proceeding to update Email')
     
     # Convert all values to lower-case
-    each_row = each_row.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+    each_row = each_row.map(lambda x: x.lower() if isinstance(x, str) else x)
     
     # Get email address list
     email_list = each_row[['Email 1', 'Email 2', 'Email 3']].T
@@ -477,7 +478,7 @@ def update_emails(each_row, constituent_id):
     email_list = email_list[['Email']].reset_index(drop=True).dropna()
     
     # Convert all values to lower-case
-    email_list = email_list.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+    email_list = email_list.map(lambda x: x.lower() if isinstance(x, str) else x)
     
     # Get Email address present in RE
     url = f'https://api.sky.blackbaud.com/constituent/v1/constituents/{constituent_id}/emailaddresses'
@@ -491,13 +492,13 @@ def update_emails(each_row, constituent_id):
     # Get emails in RE
     try:
         # Convert all values to lower-case
-        re_data = re_data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+        re_data = re_data.map(lambda x: x.lower() if isinstance(x, str) else x)
         
         re_email = re_data[['address']]
         re_email.columns = ['Email']
         
         # Convert all values to lower-case
-        re_email = re_email.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+        re_email = re_email.map(lambda x: x.lower() if isinstance(x, str) else x)
         
         # Find missing Email Addresses
         merged_df = pd.merge(email_list, re_email, how='outer', indicator=True)
@@ -1343,6 +1344,7 @@ def send_mail_different_education(re_data, each_row, subject):
                         'Content': emailbody
                     },
                     'ToRecipients': get_recipients(ERROR_EMAILS_TO),
+                    'CcRecipients': get_recipients(CC_TO),
                 'SaveToSentItems': 'true'
                 }
             }
@@ -1582,7 +1584,8 @@ def send_mail_different_name(re_name, new_name, subject):
                         'ContentType': 'HTML',
                         'Content': emailbody
                     },
-                    'ToRecipients': get_recipients(ERROR_EMAILS_TO)
+                    'ToRecipients': get_recipients(ERROR_EMAILS_TO),
+                    'CcRecipients': get_recipients(CC_TO),
                 },
                 'SaveToSentItems': 'true'
             }
@@ -1703,6 +1706,7 @@ def issue_with_updates(df, error):
                         'Content': emailbody
                     },
                     'ToRecipients': get_recipients(ERROR_EMAILS_TO),
+                    'CcRecipients': get_recipients(CC_TO),
                     'Attachments': [
                         {
                             '@odata.type': '#microsoft.graph.fileAttachment',
