@@ -69,7 +69,7 @@ def get_data():
 
     # Getting list of opt-outs
     df5 = pd.read_parquet('Databases/Opt-outs.parquet')
-    list_4 = df5['id'].astype(int).to_list()
+    list_4 = df5['id'].dropna().astype(int).to_list()
 
     return df1, df2, list_1, list_2, list_3, list_4
 
