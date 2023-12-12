@@ -138,6 +138,14 @@ verified_phone = verified_contacts[verified_contacts['category'] == 'Verified Ph
 ## Formatting it as proper readable numbers
 verified_phone = "{:,}".format(verified_phone)
 
+# Verified Location
+# Getting the count for metrics
+verified_location = verified_contacts[verified_contacts['category'] == 'Verified Location']['parent_id'].nunique()
+
+## Formatting it as proper readable numbers
+verified_location = "{:,}".format(verified_location)
+
+
 # Updates
 updates = data[(data['date'].between(start_date, end_date)) & (data['sync_source'].isin(sources))].reset_index(drop=True)
 
@@ -178,10 +186,11 @@ st.title(":dart: Database KPI Tracker")
 st.markdown("##")
 
 # Row A
-st.markdown('## Verified Contacts')
-col1, col2 = st.columns(2)
+st.markdown('## Verified Details')
+col1, col2, col3 = st.columns(3)
 col1.metric("Email", verified_emails)
 col2.metric("Phone", verified_phone)
+col3.metric("Location", verified_location)
 
 # Row B
 # Combine verified_emails and verified_phone into a single dataframe
