@@ -1,5 +1,7 @@
 [server]
 headless = true
+port = 8501
+baseUrlPath = 'data'
 
 [browser]
 gatherUsageStats = false
