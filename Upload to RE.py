@@ -1834,11 +1834,11 @@ try:
     form_data['Class of'] = form_data['Class of'].astype(int)
 
     # Fixing the Postal code column
-    ## 1. Replace 'Other' and 'NA' values with NaN
+    # 1. Replace 'Other' and 'NA' values with NaN
     form_data['Postal Code'] = pd.to_numeric(form_data['Postal Code'], errors='coerce')
-    ## 2. Replace NaN values with a default value, such as -1 or 0
+    # 2. Replace NaN values with a default value, such as -1 or 0
     form_data['Postal Code'].fillna(0, inplace=True)
-    ## 3. Convert the 'class_of' column to 'float'
+    # 3. Convert the 'class_of' column to 'float'
     form_data['Postal Code'] = form_data['Postal Code'].astype(float)
 
     # Remove data that's already uploaded
