@@ -1828,9 +1828,9 @@ try:
     form_data['Class of'] = pd.to_numeric(form_data['Class of'], errors='coerce')
     ## 2. Replace NaN values with a default value, such as -1 or 0
     form_data['Class of'].fillna(0, inplace=True)
-    ## 3. Convert the 'class_of' column to 'float'
+    # 3. Convert the 'class_of' column to 'float'
     form_data['Class of'] = form_data['Class of'].astype(float)
-    ## 4. Convert the 'float' datatype to the 'int' datatype
+    # 4. Convert the 'float' datatype to the 'int' datatype
     form_data['Class of'] = form_data['Class of'].astype(int)
 
     # Fixing the Postal code column
