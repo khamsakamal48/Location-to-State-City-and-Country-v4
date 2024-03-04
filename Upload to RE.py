@@ -1824,9 +1824,9 @@ try:
     form_data = form_data.replace(to_replace=[0, 'NA', 'na', 'Other', 'other'], value=np.NaN)
 
     # Fixing the class of column
-    ## 1. Replace 'Other' and 'NA' values with NaN
+    # 1. Replace 'Other' and 'NA' values with NaN
     form_data['Class of'] = pd.to_numeric(form_data['Class of'], errors='coerce')
-    ## 2. Replace NaN values with a default value, such as -1 or 0
+    # 2. Replace NaN values with a default value, such as -1 or 0
     form_data['Class of'].fillna(0, inplace=True)
     # 3. Convert the 'class_of' column to 'float'
     form_data['Class of'] = form_data['Class of'].astype(float)
