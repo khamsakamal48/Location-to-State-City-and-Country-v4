@@ -1843,13 +1843,13 @@ try:
 
     # Remove data that's already uploaded
 
-    ## Load data that's uploaded
+    # Load data that's uploaded
     try:
         data_uploaded = load_data('Data Uploaded').copy()
     except:
         data_uploaded = pd.DataFrame()
 
-    ## Identify the new data which is yet to be uploaded
+    # Identify the new data which is yet to be uploaded
     new_data = find_remaining_data(form_data, data_uploaded).copy()
 
     # Upload data to RE
