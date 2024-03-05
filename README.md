@@ -18,6 +18,7 @@ pip install openpyxl
 pip install chardet
 pip install tensorflow
 pip install scikit-learn
+pip install msal
 ```
 
 ## How to run streamlit as service and reverse proxy through NGINX
