@@ -1850,7 +1850,7 @@ try:
     try:
         data_uploaded = load_data('Data Uploaded').copy()
     except:
-        data_uploaded = pd.DataFrame()
+        data_uploaded = pd.DataFrame(columns=form_data.columns)
 
     # Identify the new data which is yet to be uploaded
     new_data = find_remaining_data(form_data, data_uploaded).copy()
