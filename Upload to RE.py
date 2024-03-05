@@ -632,12 +632,15 @@ def update_event(row, re_id):
 
     if row.loc[0]['Is an Event?'] == 'Yes':
 
+        event_date = row.loc[0]['Event Date']
+        event_date = pd.to_datetime(event_date).isoformat()
+
         params = {
             'category': 'Events Attended',
             'comment': f'Updated on {datetime.now()}'[:50],
             'parent_id': re_id,
             'value': row.loc[0]['Enter the source of your data?'][:50],
-            'date': row.loc[0]['Event Date'][:50]
+            'date': event_date
         }
 
         url = 'https://api.sky.blackbaud.com/constituent/v1/constituents/customfields'
